@@ -1,8 +1,8 @@
 import React from 'react'
-export const App = () => {
+const App = () => {
   return (
     <>
-  
+    <p>welcome</p>
     </>
   )
 }
