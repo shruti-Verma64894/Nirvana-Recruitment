@@ -4,9 +4,7 @@ import StatusBadge from "./StatusBadge";
 const CandidateTable = ({ candidates }) => {
   return (
     <div className="table-container">
-
       <table>
-
         <thead>
           <tr>
             <th>Candidate ID</th>
@@ -22,51 +20,76 @@ const CandidateTable = ({ candidates }) => {
             <th>Action</th>
           </tr>
         </thead>
+
         <tbody>
-  {candidates.length === 0 ? (
-    <tr>
-      <td colSpan="11" className="empty-state">
-        No candidates found
-      </td>
-    </tr>
-  ) : (
-    candidates.map((candidate) => (
-      <tr key={candidate.id}>
+          {candidates.length === 0 ? (
+            <tr>
+              <td colSpan="11" className="empty-state">
+                No candidates found
+              </td>
+            </tr>
+          ) : (
+            candidates.map((candidate) => (
+              <tr key={candidate.id}>
+                {/* Candidate ID */}
+                <td>{candidate.candidateID}</td>
 
-        <td>{candidate.candidateId}</td>
+                {/* First Name */}
+                <td>{candidate.firstName}</td>
 
-        <td>{candidate.firstName}</td>
+                {/* Last Name */}
+                <td>{candidate.lastName}</td>
 
-        <td>{candidate.lastName}</td>
+                {/* Email */}
+                <td>{candidate.email}</td>
 
-        <td>{candidate.email}</td>
+                {/* Phone */}
+                <td>{candidate.phone}</td>
 
-        <td>{candidate.phone}</td>
+                {/* Experience */}
+                <td>{candidate.experience} years</td>
 
-        <td>{candidate.experience} years</td>
+                {/* Skills - Liferay returns string */}
+                <td>
+                  {typeof candidate.skills === "string"
+                    ? candidate.skills
+                    : Array.isArray(candidate.skills)
+                    ? candidate.skills.join(", ")
+                    : ""}
+                </td>
 
-        <td>{candidate.skills.join(", ")}</td>
+                {/* Role */}
+                <td>{candidate.role}</td>
 
-        <td>{candidate.role}</td>
+                {/* Status */}
+                <td>
+                  <StatusBadge
+                    status={
+                      candidate.nirvanaStatus?.name ||
+                      candidate.nirvanaStatus?.key ||
+                      ""
+                    }
+                  />
+                </td>
 
-        <td>
-          <StatusBadge status={candidate.status} />
-        </td>
+                {/* Created Date */}
+                <td>
+                  {candidate.dateCreated
+                    ? new Date(candidate.dateCreated).toLocaleDateString()
+                    : "-"}
+                </td>
 
-        <td>{candidate.createdDate}</td>
-
-        <td>
-          <Link to={`/candidates/${candidate.id}`}>
-            View Profile
-          </Link>
-        </td>
-
-      </tr>
-    ))
-  )}
-</tbody>
+                {/* Action */}
+                <td>
+                  <Link to={`/candidates/${candidate.id}`}>
+                    View Profile
+                  </Link>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
       </table>
-
     </div>
   );
 };
