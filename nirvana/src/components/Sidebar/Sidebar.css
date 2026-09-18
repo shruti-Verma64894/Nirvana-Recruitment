@@ -3,24 +3,41 @@
   top: 0;
   left: 0;
   bottom: 0;
-  width: 200px;   /* 180px se kam kiya */
+  width: 260px;
+  height: 100vh;
+  max-height: 100dvh;
+  box-sizing: border-box;
   background-color: #202020;
   color: white;
   z-index: 1100;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  transition: width 0.25s ease;
+}
+
+/* Icon-only collapsed state */
+.sidebar.sidebar-collapsed {
+  flex-basis: 80px;
+  width: 80px;
 }
 
 .company-section {
-  height: 100px;          /* thoda kam kiya */
-  padding: 16px 12px;     /* padding kam ki */
-  border-bottom: 2px solid #3a3a3a;
+  height: 100px;
+  padding: 16px 12px;
+  border-bottom: 2.2px solid #575555;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 14px;
+}
+
+.sidebar-collapsed .company-section {
+  justify-content: center;
+  padding: 16px 0;
 }
 
 .company-logo {
-  width: 36px;             /* logo bhi chota kiya */
+  width: 36px;
   height: 36px;
   flex-shrink: 0;
   margin-top: 4px;
@@ -36,34 +53,53 @@
 }
 
 .company-name {
-  font-size: 14px;         /* text chota kiya */
+  font-size: 16px;
   line-height: 1.2;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .company-subtitle {
   font-size: 12px;
+  margin-top: 4px;
+  white-space: nowrap;
 }
 
 .sidebar-nav {
-  padding: 20px 8px;       /* padding kam ki */
+  padding: 20px 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
 .sidebar-link {
-  min-height: 52px;        /* height kam ki */
-  padding: 0 12px;         /* padding kam ki */
+  min-height: 52px;
+  padding: 0 12px;
   border-radius: 7px;
   display: flex;
   align-items: center;
-  gap: 10px;                /* icon-text gap kam ki */
+  gap: 10px;
   color: #ffffff;
   text-decoration: none;
-  font-size: 14px;          /* font kam kiya */
+  font-size: 14px;
   font-weight: 400;
+  white-space: nowrap;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-link:hover {
+  background-color: #2c2c2c;
+}
+
+.sidebar-link.active {
+  background-color: #ff6a00;
+  color: #ffffff;
+}
+
+/* Center icons when collapsed */
+.sidebar-collapsed .sidebar-link {
+  justify-content: center;
+  padding: 0;
 }
 
 .sidebar-link svg {

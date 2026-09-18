@@ -6,146 +6,76 @@ import {
   FileText,
   UserRound,
 } from "lucide-react";
-import "./sidebar.css";
+import "./Sidebar.css";
+import logo from "../../assets/logo.png";
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen }) => {
   return (
-    <aside className="sidebar">
-
+    <aside className={`sidebar ${isOpen ? "" : "sidebar-collapsed"}`}>
       <div className="company-section">
-
         <div className="company-logo">
-          <img
-            src=""
-            alt="Nirvana Lab"
-          />
+          <img src={logo} alt="Nirvana Lab" />
         </div>
 
-        <div className="company-info">
-
-          <div className="company-name">
-            Nirvana Lab India Private
-            <br />
-            Limited.
+        {isOpen && (
+          <div className="company-info">
+            <div className="company-name">Nirvana Recrurement</div>
+            <div className="company-subtitle">My Company</div>
           </div>
-
-          <div className="company-subtitle">
-            My Company
-          </div>
-
-        </div>
-
+        )}
       </div>
 
-
-      
-
       <nav className="sidebar-nav">
-
-        {/* DASHBOARD */}
-
         <NavLink
           to="/"
           className={({ isActive }) =>
-            isActive
-              ? "sidebar-link active"
-              : "sidebar-link"
+            isActive ? "sidebar-link active" : "sidebar-link"
           }
         >
           <LayoutDashboard size={20} strokeWidth={1.8} />
-
-          <span>Dashboard</span>
+          {isOpen && <span>Dashboard</span>}
         </NavLink>
-
-
-        {/* CANDIDATES */}
 
         <NavLink
           to="/candidates"
           className={({ isActive }) =>
-            isActive
-              ? "sidebar-link active"
-              : "sidebar-link"
+            isActive ? "sidebar-link active" : "sidebar-link"
           }
         >
-          <Users size={30} strokeWidth={1.8} />
-
-          <span>Employee</span>
+          <Users size={20} strokeWidth={1.8} />
+          {isOpen && <span>Candidates</span>}
         </NavLink>
-
-
-        {/* CREATE CANDIDATE */}
 
         <NavLink
           to="/candidates/create"
           className={({ isActive }) =>
-            isActive
-              ? "sidebar-link active"
-              : "sidebar-link"
+            isActive ? "sidebar-link active" : "sidebar-link"
           }
         >
-          <UserPlus size={30} strokeWidth={1.8} />
-
-          <span>Attendance</span>
+          <UserPlus size={20} strokeWidth={1.8} />
+          {isOpen && <span>Create Candidate</span>}
         </NavLink>
-
-
-        {/* REPORTS */}
 
         <NavLink
           to="/reports"
           className={({ isActive }) =>
-            isActive
-              ? "sidebar-link active"
-              : "sidebar-link"
+            isActive ? "sidebar-link active" : "sidebar-link"
           }
         >
-          <FileText size={30} strokeWidth={1.8} />
-
-          <span>Leave</span>
+          <FileText size={20} strokeWidth={1.8} />
+          {isOpen && <span>Reports</span>}
         </NavLink>
-
-
-        {/* USERS */}
 
         <NavLink
           to="/users"
           className={({ isActive }) =>
-            isActive
-              ? "sidebar-link active"
-              : "sidebar-link"
+            isActive ? "sidebar-link active" : "sidebar-link"
           }
         >
-          <UserRound size={30} strokeWidth={1.8} />
-
-          <span>Payroll</span>
+          <UserRound size={20} strokeWidth={1.8} />
+          {isOpen && <span>Users</span>}
         </NavLink>
-
-
-        {/* EXTRA MENU ITEMS */}
-
-        <div className="sidebar-link disabled-link">
-          <FileText size={30} strokeWidth={1.8} />
-          <span>Performance</span>
-        </div>
-
-        <div className="sidebar-link disabled-link">
-          <FileText size={30} strokeWidth={1.8} />
-          <span>Assets</span>
-        </div>
-
-        <div className="sidebar-link disabled-link">
-          <Users size={30} strokeWidth={1.8} />
-          <span>Help Desk</span>
-        </div>
-
-        <div className="sidebar-link disabled-link">
-          <FileText size={30} strokeWidth={1.8} />
-          <span>Project</span>
-        </div>
-
       </nav>
-
     </aside>
   );
 };

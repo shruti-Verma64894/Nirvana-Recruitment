@@ -1,0 +1,46 @@
+.app-layout {
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;   /* prevents any child from pushing layout sideways/down */
+}
+
+.layout-body {
+  width: 100%;
+}
+
+.main-content {
+  width: calc(100% - 260px);
+  margin-left: 260px;
+  margin-top: 92px;
+  padding: 24px 28px;
+  box-sizing: border-box;
+  overflow-x: auto;
+  transition: margin-left 0.25s ease, width 0.25s ease;
+}
+
+.layout-body.sidebar-collapsed .main-content {
+  width: calc(100% - 80px);
+  margin-left: 80px;
+}
+
+.content-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 800px) {
+  .main-content,
+  .layout-body.sidebar-collapsed .main-content {
+    width: calc(100% - 260px);
+    margin-left: 260px;
+  }
+}
+
+@media (max-width: 560px) {
+  .main-content,
+  .layout-body.sidebar-collapsed .main-content {
+    width: calc(100% - 80px);
+    margin-left: 80px;
+  }
+}
