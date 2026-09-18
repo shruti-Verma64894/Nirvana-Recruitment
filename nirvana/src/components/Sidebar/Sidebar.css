@@ -1,0 +1,71 @@
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 200px;   /* 180px se kam kiya */
+  background-color: #202020;
+  color: white;
+  z-index: 1100;
+  overflow-y: auto;
+}
+
+.company-section {
+  height: 100px;          /* thoda kam kiya */
+  padding: 16px 12px;     /* padding kam ki */
+  border-bottom: 2px solid #3a3a3a;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.company-logo {
+  width: 36px;             /* logo bhi chota kiya */
+  height: 36px;
+  flex-shrink: 0;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.company-logo img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.company-name {
+  font-size: 14px;         /* text chota kiya */
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.company-subtitle {
+  font-size: 12px;
+}
+
+.sidebar-nav {
+  padding: 20px 8px;       /* padding kam ki */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-link {
+  min-height: 52px;        /* height kam ki */
+  padding: 0 12px;         /* padding kam ki */
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  gap: 10px;                /* icon-text gap kam ki */
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 14px;          /* font kam kiya */
+  font-weight: 400;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-link svg {
+  flex-shrink: 0;
+}
