@@ -1,16 +1,26 @@
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Routes, Route } from "react-router-dom";
 
 import Dashboard from "./pages/Dashboard";
 import Candidates from "./pages/Candidates";
 import CandidateDetails from "./pages/CandidateDetails";
 import CandidateForm from "./pages/CandidateForm";
-import Reports from "./pages/Reports";
 import Users from "./pages/Users";
+import Login from "./pages/Login";
 
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<Dashboard />} />
+      {/* First time app open */}
+      <Route
+        path="/"
+        element={<Navigate to="/login" replace />}
+      />
+
+      {/* Login */}
+      <Route path="/login" element={<Login />} />
+
+      {/* Normal routes */}
+      <Route path="/dashboard" element={<Dashboard />} />
 
       <Route path="/candidates" element={<Candidates />} />
 
@@ -20,11 +30,14 @@ const AppRoutes = () => {
       />
 
       <Route
+        path="/candidates/:id/edit"
+        element={<CandidateForm />}
+      />
+
+      <Route
         path="/candidates/:id"
         element={<CandidateDetails />}
       />
-
-      <Route path="/reports" element={<Reports />} />
 
       <Route path="/users" element={<Users />} />
     </Routes>

@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   Users,
   UserPlus,
-  FileText,
   UserRound,
 } from "lucide-react";
 import "./Sidebar.css";
@@ -26,15 +25,15 @@ const Sidebar = ({ isOpen }) => {
       </div>
 
       <nav className="sidebar-nav">
-        <NavLink
-          to="/"
-          className={({ isActive }) =>
-            isActive ? "sidebar-link active" : "sidebar-link"
-          }
-        >
-          <LayoutDashboard size={20} strokeWidth={1.8} />
-          {isOpen && <span>Dashboard</span>}
-        </NavLink>
+      <NavLink
+  to="/dashboard"
+  className={({ isActive }) =>
+    isActive ? "sidebar-link active" : "sidebar-link"
+  }
+>
+  <LayoutDashboard size={20} strokeWidth={1.8} />
+  {isOpen && <span>Dashboard</span>}
+</NavLink>
 
         <NavLink
           to="/candidates"
@@ -54,16 +53,6 @@ const Sidebar = ({ isOpen }) => {
         >
           <UserPlus size={20} strokeWidth={1.8} />
           {isOpen && <span>Create Candidate</span>}
-        </NavLink>
-
-        <NavLink
-          to="/reports"
-          className={({ isActive }) =>
-            isActive ? "sidebar-link active" : "sidebar-link"
-          }
-        >
-          <FileText size={20} strokeWidth={1.8} />
-          {isOpen && <span>Reports</span>}
         </NavLink>
 
         <NavLink

@@ -1,102 +1,128 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-
+import { useNavigate } from "react-router-dom";
 import StatusBadge from "../components/StatusBadge";
+import {
+  getCandidateById,
+  deleteCandidate,
+} from "../services/liferayApi";
 
 const CandidateDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  // Temporary data
-  // Later this will come from Liferay API.
-  const candidates = [
-    {
-      id: 1,
-      candidateId: "CAN001",
-      firstName: "Rahul",
-      lastName: "Sharma",
-      email: "rahul@gmail.com",
-      phone: "9876543210",
-      address: "Lucknow, Uttar Pradesh",
-      experience: 2,
-      currentCTC: "5 LPA",
-      expectedCTC: "7 LPA",
-      noticePeriod: "30 Days",
-      skills: ["React", "JavaScript"],
-      role: "Frontend Developer",
-      status: "ROUND2",
-      createdDate: "17 Sep 2026",
-      comments: "Good technical performance.",
-      assignedManager: "Amit Sharma",
-    },
+  const [candidate, setCandidate] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-    {
-      id: 2,
-      candidateId: "CAN002",
-      firstName: "Priya",
-      lastName: "Verma",
-      email: "priya@gmail.com",
-      phone: "9876543211",
-      address: "Lucknow, Uttar Pradesh",
-      experience: 1,
-      currentCTC: "4 LPA",
-      expectedCTC: "6 LPA",
-      noticePeriod: "15 Days",
-      skills: ["Java", "SQL"],
-      role: "Java Developer",
-      status: "REVIEW",
-      createdDate: "16 Sep 2026",
-      comments: "Candidate under technical review.",
-      assignedManager: "Neha Singh",
-    },
+  useEffect(() => {
+    const fetchCandidate = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-    {
-      id: 3,
-      candidateId: "CAN003",
-      firstName: "Aman",
-      lastName: "Singh",
-      email: "aman@gmail.com",
-      phone: "9876543212",
-      address: "Kanpur, Uttar Pradesh",
-      experience: 3,
-      currentCTC: "6 LPA",
-      expectedCTC: "9 LPA",
-      noticePeriod: "30 Days",
-      skills: ["Node.js", "JavaScript"],
-      role: "Backend Developer",
-      status: "ROUND1",
-      createdDate: "15 Sep 2026",
-      comments: "Passed initial screening.",
-      assignedManager: "Amit Sharma",
-    },
+        const data = await getCandidateById(id);
 
-    {
-      id: 4,
-      candidateId: "CAN004",
-      firstName: "Neha",
-      lastName: "Gupta",
-      email: "neha@gmail.com",
-      phone: "9876543213",
-      address: "Delhi",
-      experience: 4,
-      currentCTC: "8 LPA",
-      expectedCTC: "11 LPA",
-      noticePeriod: "60 Days",
-      skills: ["React", "Node.js"],
-      role: "Full Stack Developer",
-      status: "APPROVED",
-      createdDate: "14 Sep 2026",
-      comments: "Candidate approved.",
-      assignedManager: "Neha Singh",
-    },
-  ];
+        console.log("Liferay Candidate:", data);
 
-  const candidate = candidates.find(
-    (candidate) => candidate.id === Number(id)
-  );
+        setCandidate(data);
+      } catch (error) {
+        console.error(
+          "Candidate Details Error:",
+          error
+        );
 
-  if (!candidate) {
+        console.error(
+          "Liferay Error Response:",
+          error.response?.data
+        );
+
+        setError(
+          error.response?.data?.title ||
+            "Failed to load candidate."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCandidate();
+  }, [id]);
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this candidate?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await deleteCandidate(id);
+
+      alert("Candidate deleted successfully!");
+
+      navigate("/candidates");
+    } catch (error) {
+      console.error(
+        "Delete Candidate Error:",
+        error
+      );
+
+      alert(
+        error.response?.data?.title ||
+          "Failed to delete candidate."
+      );
+    }
+  };
+
+  // View CV
+  const handleViewCV = () => {
+    const cvUrl = candidate?.cVResume?.fileURL;
+
+    if (!cvUrl) {
+      alert("CV is not available.");
+      return;
+    }
+
+    window.open(cvUrl, "_blank");
+  };
+
+  // Download CV
+  const handleDownloadCV = () => {
+    const cvUrl = candidate?.cVResume?.fileURL;
+
+    if (!cvUrl) {
+      alert("CV is not available.");
+      return;
+    }
+
+    const link = document.createElement("a");
+
+    link.href = cvUrl;
+    link.download =
+      candidate?.cVResume?.name || "candidate-resume";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  if (loading) {
+    return (
+      <div className="page">
+        <p>Loading candidate...</p>
+      </div>
+    );
+  }
+
+  if (error || !candidate) {
     return (
       <div className="page">
         <h1>Candidate Not Found</h1>
+
+        <p className="error-message">
+          {error || "Candidate does not exist."}
+        </p>
 
         <Link to="/candidates">
           ← Back to Candidates
@@ -104,6 +130,24 @@ const CandidateDetails = () => {
       </div>
     );
   }
+
+  const status =
+    candidate.nirvanaStatus?.name ||
+    candidate.nirvanaStatus?.key ||
+    "";
+
+  const skills =
+    typeof candidate.skills === "string"
+      ? candidate.skills
+      : Array.isArray(candidate.skills)
+      ? candidate.skills.join(", ")
+      : "-";
+
+  const createdDate = candidate.dateCreated
+    ? new Date(
+        candidate.dateCreated
+      ).toLocaleDateString()
+    : "-";
 
   return (
     <div className="page">
@@ -113,23 +157,49 @@ const CandidateDetails = () => {
       <div className="details-header">
 
         <div>
-          <Link to="/candidates" className="back-link">
+
+          <Link
+            to="/candidates"
+            className="back-link"
+          >
             ← Back to Candidates
           </Link>
 
           <h1>
-            {candidate.firstName} {candidate.lastName}
+            {candidate.firstName}{" "}
+            {candidate.lastName}
           </h1>
 
-          <p>{candidate.candidateId}</p>
+          <p>{candidate.candidateID}</p>
+
         </div>
 
         <div className="details-actions">
 
-          <StatusBadge status={candidate.status} />
+          <StatusBadge status={status} />
 
-          <button className="primary-button">
+          <button
+            className="primary-button"
+            onClick={() => {
+              console.log("Edit clicked");
+              console.log(
+                "Candidate ID:",
+                candidate.id
+              );
+
+              navigate(
+                `/candidates/${candidate.id}/edit`
+              );
+            }}
+          >
             Edit Candidate
+          </button>
+
+          <button
+            className="delete-button"
+            onClick={handleDelete}
+          >
+            Delete Candidate
           </button>
 
         </div>
@@ -147,27 +217,37 @@ const CandidateDetails = () => {
 
           <div className="detail-item">
             <span>First Name</span>
-            <strong>{candidate.firstName}</strong>
+            <strong>
+              {candidate.firstName || "-"}
+            </strong>
           </div>
 
           <div className="detail-item">
             <span>Last Name</span>
-            <strong>{candidate.lastName}</strong>
+            <strong>
+              {candidate.lastName || "-"}
+            </strong>
           </div>
 
           <div className="detail-item">
             <span>Email</span>
-            <strong>{candidate.email}</strong>
+            <strong>
+              {candidate.email || "-"}
+            </strong>
           </div>
 
           <div className="detail-item">
             <span>Phone</span>
-            <strong>{candidate.phone}</strong>
+            <strong>
+              {candidate.phone || "-"}
+            </strong>
           </div>
 
           <div className="detail-item detail-full">
             <span>Address</span>
-            <strong>{candidate.address}</strong>
+            <strong>
+              {candidate.address || "-"}
+            </strong>
           </div>
 
         </div>
@@ -185,32 +265,44 @@ const CandidateDetails = () => {
 
           <div className="detail-item">
             <span>Experience</span>
-            <strong>{candidate.experience} Years</strong>
+            <strong>
+              {candidate.experience ?? "-"} Years
+            </strong>
           </div>
 
           <div className="detail-item">
             <span>Current CTC</span>
-            <strong>{candidate.currentCTC}</strong>
+            <strong>
+              {candidate.cTC ?? "-"}
+            </strong>
           </div>
 
           <div className="detail-item">
             <span>Expected CTC</span>
-            <strong>{candidate.expectedCTC}</strong>
+            <strong>
+              {candidate.eCTC ?? "-"}
+            </strong>
           </div>
 
           <div className="detail-item">
             <span>Notice Period</span>
-            <strong>{candidate.noticePeriod}</strong>
+            <strong>
+              {candidate.noticePeriod ?? "-"} Days
+            </strong>
           </div>
 
           <div className="detail-item">
             <span>Role</span>
-            <strong>{candidate.role}</strong>
+            <strong>
+              {candidate.role || "-"}
+            </strong>
           </div>
 
           <div className="detail-item">
             <span>Skills</span>
-            <strong>{candidate.skills.join(", ")}</strong>
+            <strong>
+              {skills}
+            </strong>
           </div>
 
         </div>
@@ -228,22 +320,31 @@ const CandidateDetails = () => {
 
           <div className="detail-item">
             <span>Candidate ID</span>
-            <strong>{candidate.candidateId}</strong>
+            <strong>
+              {candidate.candidateID || "-"}
+            </strong>
           </div>
 
           <div className="detail-item">
             <span>Status</span>
-            <StatusBadge status={candidate.status} />
+
+            <StatusBadge status={status} />
           </div>
 
           <div className="detail-item">
             <span>Created Date</span>
-            <strong>{candidate.createdDate}</strong>
+
+            <strong>
+              {createdDate}
+            </strong>
           </div>
 
           <div className="detail-item">
             <span>Assigned Manager</span>
-            <strong>{candidate.assignedManager}</strong>
+
+            <strong>
+              {candidate.assignedManager || "-"}
+            </strong>
           </div>
 
         </div>
@@ -258,15 +359,23 @@ const CandidateDetails = () => {
         <h2>CV / Resume</h2>
 
         <div className="cv-box">
+
           <span>📄 Candidate Resume</span>
 
-          <button className="secondary-button">
+          <button
+            className="secondary-button"
+            onClick={handleViewCV}
+          >
             View CV
           </button>
 
-          <button className="secondary-button">
+          <button
+            className="secondary-button"
+            onClick={handleDownloadCV}
+          >
             Download CV
           </button>
+
         </div>
 
       </section>
@@ -279,7 +388,12 @@ const CandidateDetails = () => {
         <h2>Comments</h2>
 
         <div className="comment-box">
-          <p>{candidate.comments}</p>
+
+          <p>
+            {candidate.comments ||
+              "No comments available."}
+          </p>
+
         </div>
 
       </section>
@@ -294,23 +408,15 @@ const CandidateDetails = () => {
         <div className="status-history">
 
           <div className="history-item">
-            <strong>ACTIVE</strong>
-            <span>17 Sep 2026</span>
-          </div>
 
-          <div className="history-item">
-            <strong>REVIEW</strong>
-            <span>17 Sep 2026</span>
-          </div>
+            <strong>
+              {status || "ACTIVE"}
+            </strong>
 
-          <div className="history-item">
-            <strong>ROUND1</strong>
-            <span>18 Sep 2026</span>
-          </div>
+            <span>
+              {createdDate}
+            </span>
 
-          <div className="history-item">
-            <strong>ROUND2</strong>
-            <span>19 Sep 2026</span>
           </div>
 
         </div>

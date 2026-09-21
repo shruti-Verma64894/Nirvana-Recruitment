@@ -14,6 +14,19 @@ const Candidates = () => {
   const [role, setRole] = useState("ALL");
   const [skill, setSkill] = useState("ALL");
 
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  // Applied filters
+  const [appliedFilters, setAppliedFilters] = useState({
+    search: "",
+    status: "ALL",
+    role: "ALL",
+    skill: "ALL",
+    startDate: "",
+    endDate: "",
+  });
+
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -22,6 +35,7 @@ const Candidates = () => {
     const fetchCandidates = async () => {
       try {
         setLoading(true);
+        setError("");
 
         const data = await getCandidates();
 
@@ -30,6 +44,7 @@ const Candidates = () => {
         setCandidates(data.items || []);
       } catch (error) {
         console.error("Liferay API Error:", error);
+
         setError("Failed to load candidates.");
       } finally {
         setLoading(false);
@@ -39,53 +54,179 @@ const Candidates = () => {
     fetchCandidates();
   }, []);
 
-  const filteredCandidates = candidates.filter((candidate) => {
-    const searchText = search.toLowerCase();
+  const handleFilter = () => {
+    setAppliedFilters({
+      search,
+      status,
+      role,
+      skill,
+      startDate,
+      endDate,
+    });
+  };
 
-    const matchesSearch =
-      (candidate.firstName || "").toLowerCase().includes(searchText) ||
-      (candidate.lastName || "").toLowerCase().includes(searchText) ||
-      (candidate.email || "").toLowerCase().includes(searchText) ||
-      (candidate.phone || "").includes(searchText) ||
-      (candidate.candidateId || "").toLowerCase().includes(searchText);
+  const handleClearFilters = () => {
+    setSearch("");
+    setStatus("ALL");
+    setRole("ALL");
+    setSkill("ALL");
+    setStartDate("");
+    setEndDate("");
 
-    const matchesStatus =
-      status === "ALL" || candidate.status === status;
+    setAppliedFilters({
+      search: "",
+      status: "ALL",
+      role: "ALL",
+      skill: "ALL",
+      startDate: "",
+      endDate: "",
+    });
+  };
 
-    const matchesRole =
-      role === "ALL" || candidate.role === role;
+  const filteredCandidates = candidates.filter(
+    (candidate) => {
+      // -------------------------
+      // SEARCH
+      // -------------------------
 
-    const candidateSkills =
-      typeof candidate.skills === "string"
-        ? candidate.skills.split(",").map((skill) => skill.trim())
-        : candidate.skills || [];
+      const searchText =
+        appliedFilters.search
+          .toLowerCase()
+          .trim();
 
-    const matchesSkill =
-      skill === "ALL" || candidateSkills.includes(skill);
+      const matchesSearch =
+        searchText === "" ||
+        (candidate.firstName || "")
+          .toLowerCase()
+          .includes(searchText) ||
+        (candidate.lastName || "")
+          .toLowerCase()
+          .includes(searchText) ||
+        (candidate.email || "")
+          .toLowerCase()
+          .includes(searchText) ||
+        String(candidate.phone || "")
+          .toLowerCase()
+          .includes(searchText) ||
+        (candidate.candidateID || "")
+          .toLowerCase()
+          .includes(searchText);
 
-    return (
-      matchesSearch &&
-      matchesStatus &&
-      matchesRole &&
-      matchesSkill
-    );
-  });
+      // -------------------------
+      // STATUS FILTER
+      // -------------------------
+
+      const candidateStatus =
+        candidate.nirvanaStatus?.key ||
+        candidate.nirvanaStatus?.name ||
+        "";
+
+      const matchesStatus =
+        appliedFilters.status === "ALL" ||
+        candidateStatus === appliedFilters.status;
+
+      // -------------------------
+      // ROLE FILTER
+      // -------------------------
+
+      const matchesRole =
+        appliedFilters.role === "ALL" ||
+        candidate.role === appliedFilters.role;
+
+      // -------------------------
+      // SKILLS FILTER
+      // -------------------------
+
+      const candidateSkills =
+        typeof candidate.skills === "string"
+          ? candidate.skills
+              .split(",")
+              .map((skill) =>
+                skill.trim().toLowerCase()
+              )
+          : Array.isArray(candidate.skills)
+          ? candidate.skills.map((skill) =>
+              String(skill)
+                .trim()
+                .toLowerCase()
+            )
+          : [];
+
+      const matchesSkill =
+        appliedFilters.skill === "ALL" ||
+        candidateSkills.includes(
+          appliedFilters.skill.toLowerCase()
+        );
+
+      // -------------------------
+      // DATE FILTER
+      // -------------------------
+
+      const candidateDate = candidate.dateCreated
+        ? new Date(candidate.dateCreated)
+        : null;
+
+      const startDateValue =
+        appliedFilters.startDate
+          ? new Date(
+              `${appliedFilters.startDate}T00:00:00`
+            )
+          : null;
+
+      const endDateValue =
+        appliedFilters.endDate
+          ? new Date(
+              `${appliedFilters.endDate}T23:59:59`
+            )
+          : null;
+
+      const matchesStartDate =
+        !startDateValue ||
+        (candidateDate &&
+          candidateDate >= startDateValue);
+
+      const matchesEndDate =
+        !endDateValue ||
+        (candidateDate &&
+          candidateDate <= endDateValue);
+
+      // -------------------------
+      // FINAL RESULT
+      // -------------------------
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesRole &&
+        matchesSkill &&
+        matchesStartDate &&
+        matchesEndDate
+      );
+    }
+  );
 
   return (
     <div className="page">
 
       <div className="page-header">
+
         <div>
           <h1>Candidate List</h1>
-          <p>Search and manage recruitment candidates</p>
+
+          <p>
+            Search and manage recruitment candidates
+          </p>
         </div>
 
         <button
           className="primary-button"
-          onClick={() => navigate("/candidates/create")}
+          onClick={() =>
+            navigate("/candidates/create")
+          }
         >
           + Create Candidate
         </button>
+
       </div>
 
       <div className="candidate-controls">
@@ -102,7 +243,25 @@ const Candidates = () => {
           setRole={setRole}
           skill={skill}
           setSkill={setSkill}
+          startDate={startDate}
+          setStartDate={setStartDate}
+          endDate={endDate}
+          setEndDate={setEndDate}
         />
+
+        <button
+          className="primary-button"
+          onClick={handleFilter}
+        >
+          Filter
+        </button>
+
+        <button
+          className="secondary-button"
+          onClick={handleClearFilters}
+        >
+          Clear
+        </button>
 
       </div>
 

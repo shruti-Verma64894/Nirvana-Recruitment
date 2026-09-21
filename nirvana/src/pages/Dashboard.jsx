@@ -1,67 +1,155 @@
+import { useEffect, useState } from "react";
 import StatsCard from "../components/StatsCard";
+import { getCandidates } from "../services/liferayApi";
 
 const Dashboard = () => {
+  const [candidates, setCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchCandidates = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await getCandidates();
+
+        console.log(
+          "Dashboard Candidates:",
+          data
+        );
+
+        setCandidates(data.items || []);
+      } catch (error) {
+        console.error(
+          "Dashboard API Error:",
+          error
+        );
+
+        setError(
+          "Failed to load dashboard data."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCandidates();
+  }, []);
+
+  const getStatus = (candidate) => {
+    return (
+      candidate.nirvanaStatus?.key ||
+      candidate.nirvanaStatus?.name ||
+      ""
+    );
+  };
+
   const stats = [
     {
       title: "Total Candidates",
-      value: 120,
+      value: candidates.length,
     },
     {
       title: "Active",
-      value: 25,
+      value: candidates.filter(
+        (candidate) =>
+          getStatus(candidate) === "ACTIVE"
+      ).length,
     },
     {
       title: "Under Review",
-      value: 18,
+      value: candidates.filter(
+        (candidate) =>
+          getStatus(candidate) === "REVIEW"
+      ).length,
     },
     {
       title: "Round 1",
-      value: 20,
+      value: candidates.filter(
+        (candidate) =>
+          getStatus(candidate) === "ROUND1"
+      ).length,
     },
     {
       title: "Round 2",
-      value: 15,
+      value: candidates.filter(
+        (candidate) =>
+          getStatus(candidate) === "ROUND2"
+      ).length,
     },
     {
       title: "Round 3",
-      value: 10,
+      value: candidates.filter(
+        (candidate) =>
+          getStatus(candidate) === "ROUND3"
+      ).length,
     },
     {
       title: "Round 4",
-      value: 8,
+      value: candidates.filter(
+        (candidate) =>
+          getStatus(candidate) === "ROUND4"
+      ).length,
     },
     {
       title: "Rejected",
-      value: 12,
+      value: candidates.filter(
+        (candidate) =>
+          getStatus(candidate) === "REJECTED"
+      ).length,
     },
     {
       title: "Approved",
-      value: 7,
+      value: candidates.filter(
+        (candidate) =>
+          getStatus(candidate) === "APPROVED"
+      ).length,
     },
     {
       title: "Offer Letter",
-      value: 5,
+      value: candidates.filter(
+        (candidate) =>
+          getStatus(candidate) === "OFFER_LETTER"
+      ).length,
     },
   ];
 
   return (
     <div className="page">
+
       <div className="page-header">
+
         <div>
           <h1>Dashboard</h1>
           <p>Recruitment overview</p>
         </div>
+
       </div>
 
-      <div className="stats-grid">
-        {stats.map((stat) => (
-          <StatsCard
-            key={stat.title}
-            title={stat.title}
-            value={stat.value}
-          />
-        ))}
-      </div>
+      {loading && (
+        <p>Loading dashboard...</p>
+      )}
+
+      {error && (
+        <p className="error-message">
+          {error}
+        </p>
+      )}
+
+      {!loading && !error && (
+        <div className="stats-grid">
+          {stats.map((stat) => (
+            <StatsCard
+              key={stat.title}
+              title={stat.title}
+              value={stat.value}
+            />
+          ))}
+        </div>
+      )}
+
     </div>
   );
 };
