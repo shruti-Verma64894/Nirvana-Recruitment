@@ -26,3 +26,9 @@ const Layout = ({ children }) => {
 };
 
 export default Layout;
+/*
+children is from AppRoutes 
+<Layout>
+  <AppRoutes />
+</Layout>
+*/

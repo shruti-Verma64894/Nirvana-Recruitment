@@ -7,19 +7,19 @@ const CandidateTable = ({ candidates }) => {
       <table>
         <thead>
           <tr>
-            <th>Candidate ID</th>
+            <th>ID</th>
             <th>First Name</th>
             <th>Last Name</th>
-            <th>Email</th>
-            <th>Phone</th>
+            <th>Email Address</th>
+            <th>Phone Number</th>
             <th>Address</th>
             <th>Experience</th>
             <th>Current CTC</th>
             <th>Expected CTC</th>
             <th>Notice Period</th>
             <th>Skills</th>
-            <th>Role</th>
-            <th>Status</th>
+            <th>Position Applied</th>
+            <th>Candidate Status</th>
             <th>Comments</th>
             <th>Assigned Manager</th>
             <th>Created Date</th>
@@ -38,25 +38,18 @@ const CandidateTable = ({ candidates }) => {
             candidates.map((candidate) => (
               <tr key={candidate.id}>
 
-                {/* Candidate ID */}
-                <td>{candidate.candidateID || "-"}</td>
+                <td>{candidate.id || "-"}</td>
 
-                {/* First Name */}
                 <td>{candidate.firstName || "-"}</td>
 
-                {/* Last Name */}
                 <td>{candidate.lastName || "-"}</td>
 
-                {/* Email */}
-                <td>{candidate.email || "-"}</td>
+                <td>{candidate.emailAddress || "-"}</td>
 
-                {/* Phone */}
-                <td>{candidate.phone || "-"}</td>
+                <td>{candidate.phoneNumber || "-"}</td>
 
-                {/* Address */}
-                <td>{candidate.address || "-"}</td>
+                <td>-</td>
 
-                {/* Experience */}
                 <td>
                   {candidate.experience !== undefined &&
                   candidate.experience !== null
@@ -64,23 +57,20 @@ const CandidateTable = ({ candidates }) => {
                     : "-"}
                 </td>
 
-                {/* Current CTC */}
                 <td>
-                  {candidate.cTC !== undefined &&
-                  candidate.cTC !== null
-                    ? candidate.cTC
+                  {candidate.currentCTC !== undefined &&
+                  candidate.currentCTC !== null
+                    ? candidate.currentCTC
                     : "-"}
                 </td>
 
-                {/* Expected CTC */}
                 <td>
-                  {candidate.eCTC !== undefined &&
-                  candidate.eCTC !== null
-                    ? candidate.eCTC
+                  {candidate.expectedCTC !== undefined &&
+                  candidate.expectedCTC !== null
+                    ? candidate.expectedCTC
                     : "-"}
                 </td>
 
-                {/* Notice Period */}
                 <td>
                   {candidate.noticePeriod !== undefined &&
                   candidate.noticePeriod !== null
@@ -88,36 +78,30 @@ const CandidateTable = ({ candidates }) => {
                     : "-"}
                 </td>
 
-                {/* Skills */}
+                <td>-</td>
+
                 <td>
-                  {typeof candidate.skills === "string"
-                    ? candidate.skills
-                    : Array.isArray(candidate.skills)
-                    ? candidate.skills.join(", ")
-                    : "-"}
+                  {candidate.picklist?.name || "-"}
                 </td>
 
-                {/* Role */}
-                <td>{candidate.role || "-"}</td>
-
-                {/* Status */}
                 <td>
                   <StatusBadge
                     status={
-                      candidate.nirvanaStatus?.name ||
-                      candidate.nirvanaStatus?.key ||
+                      candidate.candidateStatus?.name ||
+                      candidate.candidateStatus?.key ||
                       ""
                     }
                   />
                 </td>
 
-                {/* Comments */}
-                <td>{candidate.comments || "-"}</td>
+                <td>
+                  {candidate.commentsRawText ||
+                    candidate.comments ||
+                    "-"}
+                </td>
 
-                {/* Assigned Manager */}
-                <td>{candidate.assignedManager || "-"}</td>
+                <td>-</td>
 
-                {/* Created Date */}
                 <td>
                   {candidate.dateCreated
                     ? new Date(
@@ -126,7 +110,6 @@ const CandidateTable = ({ candidates }) => {
                     : "-"}
                 </td>
 
-                {/* Action */}
                 <td>
                   <Link to={`/candidates/${candidate.id}`}>
                     View Profile

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
+
 import StatusBadge from "../components/StatusBadge";
+
 import {
   getCandidateById,
   deleteCandidate,
@@ -14,6 +15,10 @@ const CandidateDetails = () => {
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // -------------------------
+  // GET CANDIDATE BY ID
+  // -------------------------
 
   useEffect(() => {
     const fetchCandidate = async () => {
@@ -49,6 +54,10 @@ const CandidateDetails = () => {
     fetchCandidate();
   }, [id]);
 
+  // -------------------------
+  // DELETE CANDIDATE
+  // -------------------------
+
   const handleDelete = async () => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this candidate?"
@@ -75,37 +84,58 @@ const CandidateDetails = () => {
     }
   };
 
-  // View CV
+  // -------------------------
+  // VIEW CV
+  // -------------------------
+
   const handleViewCV = () => {
-    const cvUrl = candidate?.cVResume?.fileURL;
+    const cvUrl = candidate?.cV?.link?.href;
 
     if (!cvUrl) {
       alert("CV is not available.");
       return;
     }
 
-    window.open(cvUrl, "_blank");
+    const fullUrl = cvUrl.startsWith("http")
+      ? cvUrl
+      : `${import.meta.env.VITE_LIFERAY_BASE_URL}${cvUrl}`;
+
+    window.open(fullUrl, "_blank");
   };
 
-  // Download CV
+  // -------------------------
+  // DOWNLOAD CV
+  // -------------------------
+
   const handleDownloadCV = () => {
-    const cvUrl = candidate?.cVResume?.fileURL;
+    const cvUrl = candidate?.cV?.link?.href;
 
     if (!cvUrl) {
       alert("CV is not available.");
       return;
     }
+
+    const fullUrl = cvUrl.startsWith("http")
+      ? cvUrl
+      : `${import.meta.env.VITE_LIFERAY_BASE_URL}${cvUrl}`;
 
     const link = document.createElement("a");
 
-    link.href = cvUrl;
+    link.href = fullUrl;
     link.download =
-      candidate?.cVResume?.name || "candidate-resume";
+      candidate?.cV?.name ||
+      "candidate-resume";
 
     document.body.appendChild(link);
+
     link.click();
+
     document.body.removeChild(link);
   };
+
+  // -------------------------
+  // LOADING
+  // -------------------------
 
   if (loading) {
     return (
@@ -115,9 +145,14 @@ const CandidateDetails = () => {
     );
   }
 
+  // -------------------------
+  // ERROR
+  // -------------------------
+
   if (error || !candidate) {
     return (
       <div className="page">
+
         <h1>Candidate Not Found</h1>
 
         <p className="error-message">
@@ -127,21 +162,24 @@ const CandidateDetails = () => {
         <Link to="/candidates">
           ← Back to Candidates
         </Link>
+
       </div>
     );
   }
 
+  // -------------------------
+  // ACTUAL API VALUES
+  // -------------------------
+
   const status =
-    candidate.nirvanaStatus?.name ||
-    candidate.nirvanaStatus?.key ||
+    candidate.candidateStatus?.name ||
+    candidate.candidateStatus?.key ||
     "";
 
-  const skills =
-    typeof candidate.skills === "string"
-      ? candidate.skills
-      : Array.isArray(candidate.skills)
-      ? candidate.skills.join(", ")
-      : "-";
+  const role =
+    candidate.picklist?.name ||
+    candidate.picklist?.key ||
+    "-";
 
   const createdDate = candidate.dateCreated
     ? new Date(
@@ -149,10 +187,16 @@ const CandidateDetails = () => {
       ).toLocaleDateString()
     : "-";
 
+  const cvName =
+    candidate.cV?.name ||
+    "Candidate Resume";
+
   return (
     <div className="page">
 
-      {/* Page Header */}
+      {/* =========================
+          PAGE HEADER
+      ========================= */}
 
       <div className="details-header">
 
@@ -166,11 +210,13 @@ const CandidateDetails = () => {
           </Link>
 
           <h1>
-            {candidate.firstName}{" "}
-            {candidate.lastName}
+            {candidate.firstName || "-"}{" "}
+            {candidate.lastName || ""}
           </h1>
 
-          <p>{candidate.candidateID}</p>
+          <p>
+            Candidate ID: {candidate.id}
+          </p>
 
         </div>
 
@@ -181,12 +227,6 @@ const CandidateDetails = () => {
           <button
             className="primary-button"
             onClick={() => {
-              console.log("Edit clicked");
-              console.log(
-                "Candidate ID:",
-                candidate.id
-              );
-
               navigate(
                 `/candidates/${candidate.id}/edit`
               );
@@ -207,7 +247,9 @@ const CandidateDetails = () => {
       </div>
 
 
-      {/* Personal Information */}
+      {/* =========================
+          PERSONAL INFORMATION
+      ========================= */}
 
       <section className="details-section">
 
@@ -217,36 +259,36 @@ const CandidateDetails = () => {
 
           <div className="detail-item">
             <span>First Name</span>
+
             <strong>
               {candidate.firstName || "-"}
             </strong>
           </div>
 
+
           <div className="detail-item">
             <span>Last Name</span>
+
             <strong>
               {candidate.lastName || "-"}
             </strong>
           </div>
 
+
           <div className="detail-item">
             <span>Email</span>
+
             <strong>
-              {candidate.email || "-"}
+              {candidate.emailAddress || "-"}
             </strong>
           </div>
+
 
           <div className="detail-item">
             <span>Phone</span>
-            <strong>
-              {candidate.phone || "-"}
-            </strong>
-          </div>
 
-          <div className="detail-item detail-full">
-            <span>Address</span>
             <strong>
-              {candidate.address || "-"}
+              {candidate.phoneNumber || "-"}
             </strong>
           </div>
 
@@ -255,7 +297,9 @@ const CandidateDetails = () => {
       </section>
 
 
-      {/* Professional Information */}
+      {/* =========================
+          PROFESSIONAL INFORMATION
+      ========================= */}
 
       <section className="details-section">
 
@@ -265,43 +309,45 @@ const CandidateDetails = () => {
 
           <div className="detail-item">
             <span>Experience</span>
+
             <strong>
-              {candidate.experience ?? "-"} Years
+              {candidate.experience || "-"}
             </strong>
           </div>
+
 
           <div className="detail-item">
             <span>Current CTC</span>
+
             <strong>
-              {candidate.cTC ?? "-"}
+              {candidate.currentCTC ?? "-"}
             </strong>
           </div>
+
 
           <div className="detail-item">
             <span>Expected CTC</span>
+
             <strong>
-              {candidate.eCTC ?? "-"}
+              {candidate.expectedCTC ?? "-"}
             </strong>
           </div>
+
 
           <div className="detail-item">
             <span>Notice Period</span>
+
             <strong>
-              {candidate.noticePeriod ?? "-"} Days
+              {candidate.noticePeriod || "-"}
             </strong>
           </div>
 
-          <div className="detail-item">
-            <span>Role</span>
-            <strong>
-              {candidate.role || "-"}
-            </strong>
-          </div>
 
           <div className="detail-item">
-            <span>Skills</span>
+            <span>Position Applied</span>
+
             <strong>
-              {skills}
+              {role}
             </strong>
           </div>
 
@@ -310,7 +356,9 @@ const CandidateDetails = () => {
       </section>
 
 
-      {/* Recruitment Information */}
+      {/* =========================
+          RECRUITMENT INFORMATION
+      ========================= */}
 
       <section className="details-section">
 
@@ -320,16 +368,19 @@ const CandidateDetails = () => {
 
           <div className="detail-item">
             <span>Candidate ID</span>
+
             <strong>
-              {candidate.candidateID || "-"}
+              {candidate.id || "-"}
             </strong>
           </div>
+
 
           <div className="detail-item">
             <span>Status</span>
 
             <StatusBadge status={status} />
           </div>
+
 
           <div className="detail-item">
             <span>Created Date</span>
@@ -339,20 +390,14 @@ const CandidateDetails = () => {
             </strong>
           </div>
 
-          <div className="detail-item">
-            <span>Assigned Manager</span>
-
-            <strong>
-              {candidate.assignedManager || "-"}
-            </strong>
-          </div>
-
         </div>
 
       </section>
 
 
-      {/* CV */}
+      {/* =========================
+          CV / RESUME
+      ========================= */}
 
       <section className="details-section">
 
@@ -360,7 +405,10 @@ const CandidateDetails = () => {
 
         <div className="cv-box">
 
-          <span>📄 Candidate Resume</span>
+          <span>
+            📄 {cvName}
+          </span>
+
 
           <button
             className="secondary-button"
@@ -368,6 +416,7 @@ const CandidateDetails = () => {
           >
             View CV
           </button>
+
 
           <button
             className="secondary-button"
@@ -381,7 +430,9 @@ const CandidateDetails = () => {
       </section>
 
 
-      {/* Comments */}
+      {/* =========================
+          COMMENTS
+      ========================= */}
 
       <section className="details-section">
 
@@ -390,7 +441,8 @@ const CandidateDetails = () => {
         <div className="comment-box">
 
           <p>
-            {candidate.comments ||
+            {candidate.commentsRawText ||
+              candidate.comments ||
               "No comments available."}
           </p>
 
@@ -399,7 +451,9 @@ const CandidateDetails = () => {
       </section>
 
 
-      {/* Status History */}
+      {/* =========================
+          STATUS HISTORY
+      ========================= */}
 
       <section className="details-section">
 
@@ -410,7 +464,7 @@ const CandidateDetails = () => {
           <div className="history-item">
 
             <strong>
-              {status || "ACTIVE"}
+              {status || "-"}
             </strong>
 
             <span>

@@ -10,17 +10,16 @@ import Login from "./pages/Login";
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* First time app open */}
+     
       <Route
         path="/"
         element={<Navigate to="/login" replace />}
       />
 
-      {/* Login */}
       <Route path="/login" element={<Login />} />
 
-      {/* Normal routes */}
       <Route path="/dashboard" element={<Dashboard />} />
+     
 
       <Route path="/candidates" element={<Candidates />} />
 

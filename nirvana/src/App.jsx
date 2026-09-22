@@ -7,6 +7,7 @@ const App = () => {
 
   const isLoginPage = location.pathname === "/login";
 
+  // If I am on Login page, don't show Layout.
   if (isLoginPage) {
     return <AppRoutes />;
   }
@@ -19,3 +20,4 @@ const App = () => {
 };
 
 export default App;
+ 

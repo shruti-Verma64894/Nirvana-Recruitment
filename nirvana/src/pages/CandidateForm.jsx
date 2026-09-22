@@ -7,24 +7,6 @@ import {
   updateCandidate,
 } from "../services/liferayApi";
 
-// ADDED: Convert file to Base64
-const fileToBase64 = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.readAsDataURL(file);
-
-    reader.onload = () => {
-      const base64 = reader.result.split(",")[1];
-      resolve(base64);
-    };
-
-    reader.onerror = (error) => {
-      reject(error);
-    };
-  });
-};
-
 const CandidateForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -32,26 +14,32 @@ const CandidateForm = () => {
   const isEditMode = Boolean(id);
 
   const [formData, setFormData] = useState({
-    candidateID: "",
     firstName: "",
     lastName: "",
-    email: "",
-    phone: "",
-    address: "",
+    emailAddress: "",
+    phoneNumber: "",
     experience: "",
     currentCTC: "",
     expectedCTC: "",
     noticePeriod: "",
-    skills: "",
-    role: "",
-    status: "ACTIVE",
+    positionApplied: "",
+    candidateStatus: "Active",
     comments: "",
     cv: null,
+
+    // Existing CV ID from Liferay
+    existingCVId: null,
   });
 
   const [loading, setLoading] = useState(false);
-  const [loadingCandidate, setLoadingCandidate] = useState(false);
+  const [loadingCandidate, setLoadingCandidate] =
+    useState(false);
+
   const [error, setError] = useState("");
+
+  // =========================
+  // LOAD CANDIDATE FOR EDIT
+  // =========================
 
   useEffect(() => {
     if (!isEditMode) {
@@ -65,21 +53,23 @@ const CandidateForm = () => {
 
         const candidate = await getCandidateById(id);
 
-        console.log("Candidate for Edit:", candidate);
+        console.log(
+          "Candidate for Edit:",
+          candidate
+        );
 
         setFormData({
-          candidateID: candidate.candidateID || "",
-          firstName: candidate.firstName || "",
-          lastName: candidate.lastName || "",
-          email: candidate.email || "",
+          firstName:
+            candidate.firstName || "",
 
-          phone:
-            candidate.phone !== undefined &&
-            candidate.phone !== null
-              ? String(candidate.phone)
-              : "",
+          lastName:
+            candidate.lastName || "",
 
-          address: candidate.address || "",
+          emailAddress:
+            candidate.emailAddress || "",
+
+          phoneNumber:
+            candidate.phoneNumber || "",
 
           experience:
             candidate.experience !== undefined &&
@@ -88,15 +78,15 @@ const CandidateForm = () => {
               : "",
 
           currentCTC:
-            candidate.cTC !== undefined &&
-            candidate.cTC !== null
-              ? String(candidate.cTC)
+            candidate.currentCTC !== undefined &&
+            candidate.currentCTC !== null
+              ? String(candidate.currentCTC)
               : "",
 
           expectedCTC:
-            candidate.eCTC !== undefined &&
-            candidate.eCTC !== null
-              ? String(candidate.eCTC)
+            candidate.expectedCTC !== undefined &&
+            candidate.expectedCTC !== null
+              ? String(candidate.expectedCTC)
               : "",
 
           noticePeriod:
@@ -105,23 +95,26 @@ const CandidateForm = () => {
               ? String(candidate.noticePeriod)
               : "",
 
-          skills:
-            typeof candidate.skills === "string"
-              ? candidate.skills
-              : Array.isArray(candidate.skills)
-              ? candidate.skills.join(", ")
-              : "",
+          positionApplied:
+            candidate.picklist?.key ||
+            candidate.picklist?.name ||
+            "",
 
-          role: candidate.role || "",
+          candidateStatus:
+            candidate.candidateStatus?.key ||
+            candidate.candidateStatus?.name ||
+            "Active",
 
-          status:
-            candidate.nirvanaStatus?.key ||
-            candidate.nirvanaStatus?.name ||
-            "ACTIVE",
-
-          comments: candidate.comments || "",
+          comments:
+            candidate.commentsRawText ||
+            candidate.comments ||
+            "",
 
           cv: null,
+
+          // IMPORTANT
+          existingCVId:
+            candidate.cV?.id || null,
         });
       } catch (error) {
         console.error(
@@ -146,6 +139,10 @@ const CandidateForm = () => {
     fetchCandidate();
   }, [id, isEditMode]);
 
+  // =========================
+  // HANDLE INPUT CHANGE
+  // =========================
+
   const handleChange = (e) => {
     const { name, value, files } = e.target;
 
@@ -155,112 +152,220 @@ const CandidateForm = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // =========================
+  // FILE TO BASE64
+  // =========================
 
-    setLoading(true);
-    setError("");
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
 
-    try {
-      const candidateData = {
-        candidateID: formData.candidateID.trim(),
+      reader.readAsDataURL(file);
 
-        firstName: formData.firstName.trim(),
+      reader.onload = () => {
+        const base64 =
+          reader.result.split(",")[1];
 
-        lastName: formData.lastName.trim(),
-
-        email: formData.email.trim(),
-
-        phone: Number(formData.phone),
-
-        address: formData.address.trim(),
-
-        experience: Number(formData.experience),
-
-        cTC: formData.currentCTC
-          ? Number(formData.currentCTC)
-          : 0,
-
-        eCTC: Number(formData.expectedCTC),
-
-        noticePeriod: Number(formData.noticePeriod),
-
-        skills: formData.skills.trim(),
-
-        role: formData.role,
-
-        nirvanaStatus: {
-          key: formData.status,
-          name: formData.status,
-        },
-
-        comments: formData.comments.trim(),
+        resolve(base64);
       };
 
-      // ADDED: Send CV as Base64 to Liferay
-      if (formData.cv) {
-        const base64 = await fileToBase64(formData.cv);
+      reader.onerror = (error) => {
+        reject(error);
+      };
+    });
+  };
 
-        candidateData.cVResume = {
-          name: formData.cv.name,
-          fileBase64: base64,
-        };
-      }
+  // =========================
+  // STATUS NAME
+  // =========================
 
-      console.log(
-        "Sending Candidate Data:",
+  const getStatusName = (key) => {
+    const statusMap = {
+      Active: "Active",
+      Review: "Review",
+      Round1: "Round 1",
+      Round2: "Round 2",
+      Round3: "Round 3",
+      Round4: "Round 4",
+      Rejected: "Rejected",
+      Approved: "Approved",
+      OfferLetter: "Offer Letter",
+    };
+
+    return statusMap[key] || key;
+  };
+
+  // =========================
+  // SUBMIT
+  // =========================
+
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  setLoading(true);
+  setError("");
+
+  try {
+    // =========================
+    // CREATE BASIC CANDIDATE DATA
+    // =========================
+
+    const candidateData = {
+      firstName: formData.firstName.trim(),
+
+      lastName: formData.lastName.trim(),
+
+      emailAddress: formData.emailAddress.trim(),
+
+      phoneNumber: formData.phoneNumber.trim(),
+
+      experience: formData.experience.trim(),
+
+      currentCTC: formData.currentCTC
+        ? Number(formData.currentCTC)
+        : 0,
+
+      expectedCTC: formData.expectedCTC
+        ? Number(formData.expectedCTC)
+        : 0,
+
+      noticePeriod: formData.noticePeriod.trim(),
+
+      // Liferay Picklist
+      picklist: {
+        key: formData.positionApplied,
+        name: formData.positionApplied,
+      },
+
+      // Liferay Candidate Status Picklist
+      candidateStatus: {
+        key: formData.candidateStatus,
+        name: getStatusName(formData.candidateStatus),
+      },
+
+      comments: formData.comments.trim(),
+    };
+
+    // =========================
+    // CV
+    // =========================
+
+    if (formData.cv) {
+      const base64 = await fileToBase64(formData.cv);
+
+      candidateData.cV = {
+        name: formData.cv.name,
+        fileBase64: base64,
+      };
+    } else if (formData.existingCVId) {
+      // Required for Edit Candidate
+      candidateData.cV = formData.existingCVId;
+    } else {
+      throw new Error(
+        "CV is required. Please upload a CV."
+      );
+    }
+
+    // =========================
+    // DEBUG
+    // =========================
+
+    console.log(
+      "========== LIFERAY REQUEST =========="
+    );
+
+    console.log(
+      "Mode:",
+      isEditMode ? "UPDATE" : "CREATE"
+    );
+
+    console.log(
+      "Candidate Data:",
+      JSON.stringify(candidateData, null, 2)
+    );
+
+    // =========================
+    // UPDATE
+    // =========================
+
+    if (isEditMode) {
+      const response = await updateCandidate(
+        id,
         candidateData
       );
 
-      if (isEditMode) {
-        const response = await updateCandidate(
-          id,
-          candidateData
-        );
-
-        console.log(
-          "Candidate Updated:",
-          response
-        );
-
-        alert("Candidate updated successfully!");
-      } else {
-        const response = await createCandidate(
-          candidateData
-        );
-
-        console.log(
-          "Candidate Created:",
-          response
-        );
-
-        alert("Candidate created successfully!");
-      }
-
-      navigate("/candidates");
-    } catch (error) {
-      console.error(
-        isEditMode
-          ? "Update Candidate Error:"
-          : "Create Candidate Error:",
-        error
+      console.log(
+        "Candidate Updated:",
+        response
       );
 
-      console.error(
-        "Liferay Error Response:",
-        error.response?.data
+      alert(
+        "Candidate updated successfully!"
       );
-
-      setError(
-        error.response?.data?.title ||
-          `Failed to ${
-            isEditMode ? "update" : "create"
-          } candidate.`
-      );
-    } finally {
-      setLoading(false);
     }
-  };
+
+    // =========================
+    // CREATE
+    // =========================
+
+    else {
+      const response = await createCandidate(
+        candidateData
+      );
+
+      console.log(
+        "Candidate Created:",
+        response
+      );
+
+      alert(
+        "Candidate created successfully!"
+      );
+    }
+
+    navigate("/candidates");
+
+  } catch (error) {
+    console.error(
+      isEditMode
+        ? "Update Candidate Error:"
+        : "Create Candidate Error:",
+      error
+    );
+
+    console.error(
+      "Liferay Error Response:",
+      error.response?.data
+    );
+
+    console.error(
+      "Liferay Status:",
+      error.response?.status
+    );
+
+    console.error(
+      "Liferay Request:",
+      error.config
+    );
+
+    setError(
+      error.response?.data?.title ||
+      error.response?.data?.message ||
+      error.message ||
+      `Failed to ${
+        isEditMode
+          ? "update"
+          : "create"
+      } candidate.`
+    );
+
+  } finally {
+    setLoading(false);
+  }
+};
+  // =========================
+  // LOADING
+  // =========================
 
   if (loadingCandidate) {
     return (
@@ -270,8 +375,14 @@ const CandidateForm = () => {
     );
   }
 
+  // =========================
+  // UI
+  // =========================
+
   return (
     <div className="page">
+
+      {/* HEADER */}
 
       <div className="page-header">
 
@@ -293,44 +404,38 @@ const CandidateForm = () => {
 
       </div>
 
+
+      {/* ERROR */}
+
       {error && (
         <p className="error-message">
           {error}
         </p>
       )}
 
+
       <form
         className="candidate-form"
         onSubmit={handleSubmit}
       >
 
-        {/* Personal Information */}
+        {/* =========================
+            PERSONAL INFORMATION
+        ========================= */}
 
         <section className="form-section">
 
-          <h2>Personal Information</h2>
+          <h2>
+            Personal Information
+          </h2>
 
           <div className="form-grid">
 
             <div className="form-group">
 
-              <label>Candidate ID *</label>
-
-              <input
-                type="text"
-                name="candidateID"
-                value={formData.candidateID}
-                onChange={handleChange}
-                placeholder="e.g. CAN004"
-                required
-                disabled={isEditMode}
-              />
-
-            </div>
-
-            <div className="form-group">
-
-              <label>First Name *</label>
+              <label>
+                First Name *
+              </label>
 
               <input
                 type="text"
@@ -343,9 +448,12 @@ const CandidateForm = () => {
 
             </div>
 
+
             <div className="form-group">
 
-              <label>Last Name *</label>
+              <label>
+                Last Name *
+              </label>
 
               <input
                 type="text"
@@ -358,14 +466,19 @@ const CandidateForm = () => {
 
             </div>
 
+
             <div className="form-group">
 
-              <label>Email *</label>
+              <label>
+                Email Address *
+              </label>
 
               <input
                 type="email"
-                name="email"
-                value={formData.email}
+                name="emailAddress"
+                value={
+                  formData.emailAddress
+                }
                 onChange={handleChange}
                 placeholder="Enter email"
                 required
@@ -373,31 +486,22 @@ const CandidateForm = () => {
 
             </div>
 
+
             <div className="form-group">
 
-              <label>Phone *</label>
+              <label>
+                Phone Number *
+              </label>
 
               <input
                 type="tel"
-                name="phone"
-                value={formData.phone}
+                name="phoneNumber"
+                value={
+                  formData.phoneNumber
+                }
                 onChange={handleChange}
                 placeholder="Enter phone number"
                 required
-              />
-
-            </div>
-
-            <div className="form-group form-full">
-
-              <label>Address</label>
-
-              <textarea
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                placeholder="Enter address"
-                rows="3"
               />
 
             </div>
@@ -407,38 +511,50 @@ const CandidateForm = () => {
         </section>
 
 
-        {/* Professional Information */}
+        {/* =========================
+            PROFESSIONAL INFORMATION
+        ========================= */}
 
         <section className="form-section">
 
-          <h2>Professional Information</h2>
+          <h2>
+            Professional Information
+          </h2>
 
           <div className="form-grid">
 
             <div className="form-group">
 
-              <label>Experience (Years) *</label>
+              <label>
+                Experience *
+              </label>
 
               <input
-                type="number"
+                type="text"
                 name="experience"
-                value={formData.experience}
+                value={
+                  formData.experience
+                }
                 onChange={handleChange}
-                placeholder="e.g. 2"
-                min="0"
+                placeholder="e.g. 2 years"
                 required
               />
 
             </div>
 
+
             <div className="form-group">
 
-              <label>Current CTC</label>
+              <label>
+                Current CTC
+              </label>
 
               <input
                 type="number"
                 name="currentCTC"
-                value={formData.currentCTC}
+                value={
+                  formData.currentCTC
+                }
                 onChange={handleChange}
                 placeholder="e.g. 500000"
                 min="0"
@@ -446,14 +562,19 @@ const CandidateForm = () => {
 
             </div>
 
+
             <div className="form-group">
 
-              <label>Expected CTC *</label>
+              <label>
+                Expected CTC *
+              </label>
 
               <input
                 type="number"
                 name="expectedCTC"
-                value={formData.expectedCTC}
+                value={
+                  formData.expectedCTC
+                }
                 onChange={handleChange}
                 placeholder="e.g. 700000"
                 min="0"
@@ -462,50 +583,48 @@ const CandidateForm = () => {
 
             </div>
 
-            <div className="form-group">
-
-              <label>Notice Period (Days) *</label>
-
-              <input
-                type="number"
-                name="noticePeriod"
-                value={formData.noticePeriod}
-                onChange={handleChange}
-                placeholder="e.g. 30"
-                min="0"
-                required
-              />
-
-            </div>
 
             <div className="form-group">
 
-              <label>Skills *</label>
+              <label>
+                Notice Period *
+              </label>
 
               <input
                 type="text"
-                name="skills"
-                value={formData.skills}
+                name="noticePeriod"
+                value={
+                  formData.noticePeriod
+                }
                 onChange={handleChange}
-                placeholder="React, JavaScript, Node.js"
+                placeholder="e.g. 30 days"
                 required
               />
 
             </div>
 
+
             <div className="form-group">
 
-              <label>Role Applied For *</label>
+              <label>
+                Position Applied *
+              </label>
 
               <select
-                name="role"
-                value={formData.role}
+                name="positionApplied"
+                value={
+                  formData.positionApplied
+                }
                 onChange={handleChange}
                 required
               >
 
                 <option value="">
-                  Select Role
+                  Select Position
+                </option>
+
+                <option value="Liferay">
+                  Liferay
                 </option>
 
                 <option value="Frontend Developer">
@@ -541,57 +660,66 @@ const CandidateForm = () => {
         </section>
 
 
-        {/* Recruitment Information */}
+        {/* =========================
+            RECRUITMENT INFORMATION
+        ========================= */}
 
         <section className="form-section">
 
-          <h2>Recruitment Information</h2>
+          <h2>
+            Recruitment Information
+          </h2>
 
           <div className="form-grid">
 
             <div className="form-group">
 
-              <label>Status</label>
+              <label>
+                Candidate Status *
+              </label>
 
               <select
-                name="status"
-                value={formData.status}
+                name="candidateStatus"
+                value={
+                  formData.candidateStatus
+                }
                 onChange={handleChange}
+                required
               >
 
-                <option value="ACTIVE">
+                <option value="Active">
                   Active
                 </option>
 
-                <option value="REVIEW">
+                <option value="Review">
                   Review
                 </option>
 
-                <option value="ROUND1">
+                <option value="Round1">
                   Round 1
                 </option>
 
-                <option value="ROUND2">
+                <option value="Round2">
                   Round 2
                 </option>
 
-                <option value="ROUND3">
+                <option value="Round3">
                   Round 3
                 </option>
 
-                <option value="ROUND4">
+                <option value="Round4">
                   Round 4
                 </option>
 
-                <option value="REJECTED">
+                <option value="Rejected">
                   Rejected
                 </option>
 
-                <option value="APPROVED">
+                <option value="Approved">
                   Approved
                 </option>
 
-                <option value="OFFER_LETTER">
+                <option value="OfferLetter">
                   Offer Letter
                 </option>
 
@@ -599,9 +727,12 @@ const CandidateForm = () => {
 
             </div>
 
+
             <div className="form-group">
 
-              <label>Upload CV</label>
+              <label>
+                Upload CV
+              </label>
 
               <input
                 type="file"
@@ -610,15 +741,30 @@ const CandidateForm = () => {
                 accept=".pdf,.doc,.docx"
               />
 
+              {isEditMode &&
+                formData.existingCVId && (
+                  <small>
+                    Existing CV is already
+                    attached. Select a new
+                    file only if you want to
+                    replace it.
+                  </small>
+                )}
+
             </div>
+
 
             <div className="form-group form-full">
 
-              <label>Comments</label>
+              <label>
+                Comments
+              </label>
 
               <textarea
                 name="comments"
-                value={formData.comments}
+                value={
+                  formData.comments
+                }
                 onChange={handleChange}
                 placeholder="Add comments..."
                 rows="4"
@@ -631,7 +777,9 @@ const CandidateForm = () => {
         </section>
 
 
-        {/* Buttons */}
+        {/* =========================
+            BUTTONS
+        ========================= */}
 
         <div className="form-actions">
 
@@ -645,6 +793,7 @@ const CandidateForm = () => {
           >
             Cancel
           </button>
+
 
           <button
             type="submit"

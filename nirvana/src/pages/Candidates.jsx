@@ -31,6 +31,10 @@ const Candidates = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // -------------------------
+  // GET CANDIDATES
+  // -------------------------
+
   useEffect(() => {
     const fetchCandidates = async () => {
       try {
@@ -54,6 +58,10 @@ const Candidates = () => {
     fetchCandidates();
   }, []);
 
+  // -------------------------
+  // APPLY FILTER
+  // -------------------------
+
   const handleFilter = () => {
     setAppliedFilters({
       search,
@@ -64,6 +72,10 @@ const Candidates = () => {
       endDate,
     });
   };
+
+  // -------------------------
+  // CLEAR FILTER
+  // -------------------------
 
   const handleClearFilters = () => {
     setSearch("");
@@ -83,131 +95,138 @@ const Candidates = () => {
     });
   };
 
-  const filteredCandidates = candidates.filter(
-    (candidate) => {
-      // -------------------------
-      // SEARCH
-      // -------------------------
+  // -------------------------
+  // FILTER CANDIDATES
+  // -------------------------
 
-      const searchText =
-        appliedFilters.search
-          .toLowerCase()
-          .trim();
+  const filteredCandidates = candidates.filter((candidate) => {
+    // -------------------------
+    // SEARCH
+    // -------------------------
 
-      const matchesSearch =
-        searchText === "" ||
-        (candidate.firstName || "")
-          .toLowerCase()
-          .includes(searchText) ||
-        (candidate.lastName || "")
-          .toLowerCase()
-          .includes(searchText) ||
-        (candidate.email || "")
-          .toLowerCase()
-          .includes(searchText) ||
-        String(candidate.phone || "")
-          .toLowerCase()
-          .includes(searchText) ||
-        (candidate.candidateID || "")
-          .toLowerCase()
-          .includes(searchText);
+    const searchText = appliedFilters.search
+      .toLowerCase()
+      .trim();
 
-      // -------------------------
-      // STATUS FILTER
-      // -------------------------
+    const matchesSearch =
+      searchText === "" ||
+      (candidate.firstName || "")
+        .toLowerCase()
+        .includes(searchText) ||
+      (candidate.lastName || "")
+        .toLowerCase()
+        .includes(searchText) ||
+      (candidate.emailAddress || "")
+        .toLowerCase()
+        .includes(searchText) ||
+      String(candidate.phoneNumber || "")
+        .toLowerCase()
+        .includes(searchText) ||
+      String(candidate.id || "")
+        .toLowerCase()
+        .includes(searchText);
 
-      const candidateStatus =
-        candidate.nirvanaStatus?.key ||
-        candidate.nirvanaStatus?.name ||
-        "";
+    // -------------------------
+    // STATUS FILTER
+    // -------------------------
 
-      const matchesStatus =
-        appliedFilters.status === "ALL" ||
-        candidateStatus === appliedFilters.status;
+    const candidateStatusKey =
+      candidate.candidateStatus?.key || "";
 
-      // -------------------------
-      // ROLE FILTER
-      // -------------------------
+    const candidateStatusName =
+      candidate.candidateStatus?.name || "";
 
-      const matchesRole =
-        appliedFilters.role === "ALL" ||
-        candidate.role === appliedFilters.role;
+    const selectedStatus = appliedFilters.status;
 
-      // -------------------------
-      // SKILLS FILTER
-      // -------------------------
+    const matchesStatus =
+      selectedStatus === "ALL" ||
+      candidateStatusKey === selectedStatus ||
+      candidateStatusName === selectedStatus;
 
-      const candidateSkills =
-        typeof candidate.skills === "string"
-          ? candidate.skills
-              .split(",")
-              .map((skill) =>
-                skill.trim().toLowerCase()
-              )
-          : Array.isArray(candidate.skills)
-          ? candidate.skills.map((skill) =>
-              String(skill)
-                .trim()
-                .toLowerCase()
-            )
-          : [];
+    // -------------------------
+    // ROLE / POSITION FILTER
+    // -------------------------
 
-      const matchesSkill =
-        appliedFilters.skill === "ALL" ||
-        candidateSkills.includes(
-          appliedFilters.skill.toLowerCase()
-        );
+    const candidateRoleKey =
+      candidate.picklist?.key || "";
 
-      // -------------------------
-      // DATE FILTER
-      // -------------------------
+    const candidateRoleName =
+      candidate.picklist?.name || "";
 
-      const candidateDate = candidate.dateCreated
-        ? new Date(candidate.dateCreated)
-        : null;
+    const selectedRole = appliedFilters.role;
 
-      const startDateValue =
-        appliedFilters.startDate
-          ? new Date(
-              `${appliedFilters.startDate}T00:00:00`
-            )
-          : null;
+    const matchesRole =
+      selectedRole === "ALL" ||
+      candidateRoleKey === selectedRole ||
+      candidateRoleName === selectedRole;
 
-      const endDateValue =
-        appliedFilters.endDate
-          ? new Date(
-              `${appliedFilters.endDate}T23:59:59`
-            )
-          : null;
+    // -------------------------
+    // SKILLS FILTER
+    // -------------------------
 
-      const matchesStartDate =
-        !startDateValue ||
-        (candidateDate &&
-          candidateDate >= startDateValue);
+    /*
+      Skills are not currently available
+      in the Liferay Candidate API response.
 
-      const matchesEndDate =
-        !endDateValue ||
-        (candidateDate &&
-          candidateDate <= endDateValue);
+      So if no skill is selected, every candidate
+      should pass this filter.
 
-      // -------------------------
-      // FINAL RESULT
-      // -------------------------
+      Once Skills is added to Liferay,
+      we can update this section.
+    */
 
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesRole &&
-        matchesSkill &&
-        matchesStartDate &&
-        matchesEndDate
-      );
-    }
-  );
+    const matchesSkill =
+      appliedFilters.skill === "ALL" ||
+      !appliedFilters.skill;
+
+    // -------------------------
+    // DATE FILTER
+    // -------------------------
+
+    const candidateDate = candidate.dateCreated
+      ? new Date(candidate.dateCreated)
+      : null;
+
+    const startDateValue = appliedFilters.startDate
+      ? new Date(
+          `${appliedFilters.startDate}T00:00:00`
+        )
+      : null;
+
+    const endDateValue = appliedFilters.endDate
+      ? new Date(
+          `${appliedFilters.endDate}T23:59:59`
+        )
+      : null;
+
+    const matchesStartDate =
+      !startDateValue ||
+      (candidateDate &&
+        candidateDate >= startDateValue);
+
+    const matchesEndDate =
+      !endDateValue ||
+      (candidateDate &&
+        candidateDate <= endDateValue);
+
+    // -------------------------
+    // FINAL RESULT
+    // -------------------------
+
+    return (
+      matchesSearch &&
+      matchesStatus &&
+      matchesRole &&
+      matchesSkill &&
+      matchesStartDate &&
+      matchesEndDate
+    );
+  });
 
   return (
     <div className="page">
 
+      {/* PAGE HEADER */}
       <div className="page-header">
 
         <div>
@@ -229,6 +248,7 @@ const Candidates = () => {
 
       </div>
 
+      {/* SEARCH & FILTERS */}
       <div className="candidate-controls">
 
         <SearchBar
@@ -265,16 +285,19 @@ const Candidates = () => {
 
       </div>
 
+      {/* LOADING */}
       {loading && (
         <p>Loading candidates...</p>
       )}
 
+      {/* ERROR */}
       {error && (
         <p className="error-message">
           {error}
         </p>
       )}
 
+      {/* TABLE */}
       {!loading && !error && (
         <CandidateTable
           candidates={filteredCandidates}

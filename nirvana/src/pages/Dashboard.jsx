@@ -15,21 +15,13 @@ const Dashboard = () => {
 
         const data = await getCandidates();
 
-        console.log(
-          "Dashboard Candidates:",
-          data
-        );
+        console.log("Liferay Candidates:", data);
 
         setCandidates(data.items || []);
       } catch (error) {
-        console.error(
-          "Dashboard API Error:",
-          error
-        );
+        console.error("Liferay API Error:", error);
 
-        setError(
-          "Failed to load dashboard data."
-        );
+        setError("Failed to load candidates.");
       } finally {
         setLoading(false);
       }
@@ -54,83 +46,69 @@ const Dashboard = () => {
     {
       title: "Active",
       value: candidates.filter(
-        (candidate) =>
-          getStatus(candidate) === "ACTIVE"
+        (candidate) => getStatus(candidate) === "ACTIVE"
       ).length,
     },
     {
       title: "Under Review",
       value: candidates.filter(
-        (candidate) =>
-          getStatus(candidate) === "REVIEW"
+        (candidate) => getStatus(candidate) === "REVIEW"
       ).length,
     },
     {
       title: "Round 1",
       value: candidates.filter(
-        (candidate) =>
-          getStatus(candidate) === "ROUND1"
+        (candidate) => getStatus(candidate) === "ROUND1"
       ).length,
     },
     {
       title: "Round 2",
       value: candidates.filter(
-        (candidate) =>
-          getStatus(candidate) === "ROUND2"
+        (candidate) => getStatus(candidate) === "ROUND2"
       ).length,
     },
     {
       title: "Round 3",
       value: candidates.filter(
-        (candidate) =>
-          getStatus(candidate) === "ROUND3"
+        (candidate) => getStatus(candidate) === "ROUND3"
       ).length,
     },
     {
       title: "Round 4",
       value: candidates.filter(
-        (candidate) =>
-          getStatus(candidate) === "ROUND4"
+        (candidate) => getStatus(candidate) === "ROUND4"
       ).length,
     },
     {
       title: "Rejected",
       value: candidates.filter(
-        (candidate) =>
-          getStatus(candidate) === "REJECTED"
+        (candidate) => getStatus(candidate) === "REJECTED"
       ).length,
     },
     {
       title: "Approved",
       value: candidates.filter(
-        (candidate) =>
-          getStatus(candidate) === "APPROVED"
+        (candidate) => getStatus(candidate) === "APPROVED"
       ).length,
     },
     {
       title: "Offer Letter",
       value: candidates.filter(
-        (candidate) =>
-          getStatus(candidate) === "OFFER_LETTER"
+        (candidate) => getStatus(candidate) === "OFFER_LETTER"
       ).length,
     },
   ];
 
   return (
     <div className="page">
-
       <div className="page-header">
-
         <div>
           <h1>Dashboard</h1>
           <p>Recruitment overview</p>
         </div>
-
       </div>
 
-      {loading && (
-        <p>Loading dashboard...</p>
-      )}
+      {loading && <p>Loading candidates...</p>}
 
       {error && (
         <p className="error-message">
@@ -149,7 +127,6 @@ const Dashboard = () => {
           ))}
         </div>
       )}
-
     </div>
   );
 };

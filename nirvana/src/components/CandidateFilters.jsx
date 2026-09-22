@@ -13,56 +13,66 @@ const CandidateFilters = ({
   return (
     <div className="filters">
 
+      {/* STATUS */}
+
       <select
         value={status}
         onChange={(e) => setStatus(e.target.value)}
       >
-        <option value="ALL">All Status</option>
+        <option value="ALL">
+          All Status
+        </option>
 
-        <option value="ACTIVE">
+        <option value="Active">
           Active
         </option>
 
-        <option value="REVIEW">
+        <option value="Review">
           Review
         </option>
 
-        <option value="ROUND1">
+        <option value="Round1">
           Round 1
         </option>
 
-        <option value="ROUND2">
+        <option value="Round2">
           Round 2
         </option>
 
-        <option value="ROUND3">
+        <option value="Round3">
           Round 3
         </option>
 
-        <option value="ROUND4">
+        <option value="Round4">
           Round 4
         </option>
 
-        <option value="REJECTED">
+        <option value="Rejected">
           Rejected
         </option>
 
-        <option value="APPROVED">
+        <option value="Approved">
           Approved
         </option>
 
-        <option value="OFFER_LETTER">
+        <option value="OfferLetter">
           Offer Letter
         </option>
       </select>
 
+
+      {/* POSITION APPLIED */}
 
       <select
         value={role}
         onChange={(e) => setRole(e.target.value)}
       >
         <option value="ALL">
-          All Roles
+          All Positions
+        </option>
+
+        <option value="Liferay">
+          Liferay
         </option>
 
         <option value="Frontend Developer">
@@ -90,6 +100,8 @@ const CandidateFilters = ({
         </option>
       </select>
 
+
+      {/* SKILLS */}
 
       <select
         value={skill}
@@ -125,6 +137,8 @@ const CandidateFilters = ({
       </select>
 
 
+      {/* START DATE */}
+
       <input
         type="date"
         value={startDate}
@@ -133,6 +147,8 @@ const CandidateFilters = ({
         }
       />
 
+
+      {/* END DATE */}
 
       <input
         type="date"
