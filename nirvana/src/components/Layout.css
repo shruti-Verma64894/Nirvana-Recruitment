@@ -1,18 +1,21 @@
 .app-layout {
   min-height: 100vh;
   width: 100%;
-  overflow-x: hidden;   
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .layout-body {
   width: 100%;
+  flex: 1;
 }
 
 .main-content {
   width: calc(100% - 260px);
   margin-left: 260px;
   margin-top: 92px;
-  padding: 24px 28px;
+  padding: 24px 28px 12px;
   box-sizing: border-box;
   overflow-x: auto;
   transition: margin-left 0.25s ease, width 0.25s ease;

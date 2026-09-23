@@ -145,7 +145,7 @@ const Candidates = () => {
 
   return (
     <div className="page">
-      
+
       <div className="page-header">
         <div>
           <h1>Candidate List</h1>
@@ -153,7 +153,6 @@ const Candidates = () => {
           <p>Search and manage recruitment candidates</p>
         </div>
 
-        
         {permissions.canCreateCandidate() && (
           <button
             className="primary-button"
@@ -164,7 +163,6 @@ const Candidates = () => {
         )}
       </div>
 
-      
       <div className="candidate-controls">
         <SearchBar search={search} setSearch={setSearch} />
 
@@ -190,13 +188,10 @@ const Candidates = () => {
         </button>
       </div>
 
-      
       {loading && <p>Loading candidates...</p>}
 
-      
       {error && <p className="error-message">{error}</p>}
 
-      
       {!loading && !error && (
         <CandidateTable candidates={filteredCandidates} />
       )}

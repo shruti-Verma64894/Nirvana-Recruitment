@@ -14,17 +14,14 @@ const AppRoutes = () => {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
 
-      
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/candidates" element={<Candidates />} />
         <Route path="/candidates/:id" element={<CandidateDetails />} />
 
-        
         <Route path="/candidates/:id/edit" element={<CandidateForm />} />
       </Route>
 
-      
       <Route element={<ProtectedRoute allowedRoles={["HR"]} />}>
         <Route path="/candidates/create" element={<CandidateForm />} />
         <Route path="/users" element={<Users />} />

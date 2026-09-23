@@ -102,8 +102,6 @@ const CandidateTable = ({ candidates }) => {
                     candidate.comments ||
                     "-"}
                 </td>
-
-                
                 <td>{getAssignedManager(candidate)}</td>
 
                 <td>

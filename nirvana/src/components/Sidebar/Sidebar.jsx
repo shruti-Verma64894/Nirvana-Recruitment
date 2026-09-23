@@ -47,7 +47,6 @@ const Sidebar = ({ isOpen }) => {
           {isOpen && <span>Candidates</span>}
         </NavLink>
 
-        
         {permissions.canCreateCandidate() && (
           <NavLink
             to="/candidates/create"
@@ -60,7 +59,6 @@ const Sidebar = ({ isOpen }) => {
           </NavLink>
         )}
 
-        
         {permissions.canManageUsers() && (
           <NavLink
             to="/users"

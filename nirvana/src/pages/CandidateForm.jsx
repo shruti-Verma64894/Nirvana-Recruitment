@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
 import { permissions } from "../services/permissions";
 import { getUsers } from "../services/userService";
 import { resolveRole } from "../services/authService";
@@ -356,7 +355,6 @@ const CandidateForm = () => {
 
   return (
     <div className="page">
-      
 
       <div className="page-header">
         <div>
@@ -370,12 +368,9 @@ const CandidateForm = () => {
         </div>
       </div>
 
-      
-
       {error && <p className="error-message">{error}</p>}
 
       <form className="candidate-form" onSubmit={handleSubmit}>
-        
 
         <section className="form-section">
           <h2>Personal Information</h2>
@@ -434,8 +429,6 @@ const CandidateForm = () => {
             </div>
           </div>
         </section>
-
-        
 
         <section className="form-section">
           <h2>Professional Information</h2>
@@ -526,8 +519,6 @@ const CandidateForm = () => {
           </div>
         </section>
 
-        
-
         <section className="form-section">
           <h2>Recruitment Information</h2>
 
@@ -611,8 +602,6 @@ const CandidateForm = () => {
             </div>
           </div>
         </section>
-
-        
 
         <div className="form-actions">
           <button

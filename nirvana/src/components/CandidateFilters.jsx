@@ -12,9 +12,6 @@ const CandidateFilters = ({
 }) => {
   return (
     <div className="filters">
-
-      
-
       <select
         value={status}
         onChange={(e) => setStatus(e.target.value)}
@@ -68,8 +65,6 @@ const CandidateFilters = ({
         </option>
       </select>
 
-      
-
       <select
         value={role}
         onChange={(e) => setRole(e.target.value)}
@@ -107,8 +102,6 @@ const CandidateFilters = ({
         </option>
       </select>
 
-      
-
       <select
         value={skill}
         onChange={(e) => setSkill(e.target.value)}
@@ -142,8 +135,6 @@ const CandidateFilters = ({
         </option>
       </select>
 
-      
-
       <input
         type="date"
         value={startDate}
@@ -151,8 +142,6 @@ const CandidateFilters = ({
           setStartDate(e.target.value)
         }
       />
-
-      
 
       <input
         type="date"

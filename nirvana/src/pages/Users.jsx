@@ -51,10 +51,6 @@ const Users = () => {
           <h1>Users</h1>
           <p>All users who can log in to this system</p>
         </div>
-
-        {isHR() && (
-          <button className="primary-button">+ Add User</button>
-        )}
       </div>
 
       {loading && <p>Loading users...</p>}
@@ -72,7 +68,6 @@ const Users = () => {
                 <th>Role</th>
                 <th>Status</th>
                 <th>Session</th>
-                {isHR() && <th>Action</th>}
               </tr>
             </thead>
 
@@ -124,12 +119,6 @@ const Users = () => {
                           "-"
                         )}
                       </td>
-
-                      {isHR() && (
-                        <td>
-                          <button className="secondary-button">Edit</button>
-                        </td>
-                      )}
                     </tr>
                   );
                 })

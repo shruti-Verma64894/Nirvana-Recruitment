@@ -1,4 +1,4 @@
-import { Menu, Bell, ChevronDown, LogOut } from "lucide-react";
+import { Menu, ChevronDown, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import "./Header.css";
@@ -46,11 +46,6 @@ const Header = ({ onMenuClick, isSidebarOpen }) => {
       </div>
 
       <div className="header-right">
-        <button className="header-icon-button notification-button">
-          <Bell size={26} strokeWidth={1.8} />
-          <span className="notification-badge">17</span>
-        </button>
-
         <div className="profile" ref={menuRef}>
           <div
             className="profile-trigger"

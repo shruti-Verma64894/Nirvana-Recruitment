@@ -152,7 +152,6 @@ const CandidateDetails = () => {
 
   return (
     <div className="page">
-      
 
       <div className="details-header">
         <div>
@@ -170,7 +169,6 @@ const CandidateDetails = () => {
         <div className="details-actions">
           <StatusBadge status={status} />
 
-          
           {permissions.canEditCandidate(candidate) && (
             <button
               className="primary-button"
@@ -182,7 +180,6 @@ const CandidateDetails = () => {
             </button>
           )}
 
-          
           {permissions.canDeleteCandidate() && (
             <button className="delete-button" onClick={handleDelete}>
               Delete Candidate
@@ -190,8 +187,6 @@ const CandidateDetails = () => {
           )}
         </div>
       </div>
-
-      
 
       <section className="details-section">
         <h2>Personal Information</h2>
@@ -228,8 +223,6 @@ const CandidateDetails = () => {
           </div>
         </div>
       </section>
-
-      
 
       <section className="details-section">
         <h2>Professional Information</h2>
@@ -273,8 +266,6 @@ const CandidateDetails = () => {
         </div>
       </section>
 
-      
-
       <section className="details-section">
         <h2>Recruitment Information</h2>
 
@@ -311,15 +302,12 @@ const CandidateDetails = () => {
         </div>
       </section>
 
-      
-
       <section className="details-section">
         <h2>CV / Resume</h2>
 
         <div className="cv-box">
           <span>📄 {cvName}</span>
 
-          
           {permissions.canViewCV() && (
             <>
               <button className="secondary-button" onClick={handleViewCV}>
@@ -337,8 +325,6 @@ const CandidateDetails = () => {
         </div>
       </section>
 
-      
-
       <section className="details-section">
         <h2>Comments</h2>
 
@@ -350,7 +336,6 @@ const CandidateDetails = () => {
           </p>
         </div>
 
-        
         {permissions.canAddComments() && (
           <button
             className="secondary-button"
@@ -360,8 +345,6 @@ const CandidateDetails = () => {
           </button>
         )}
       </section>
-
-      
 
       <section className="details-section">
         <h2>Status History</h2>
