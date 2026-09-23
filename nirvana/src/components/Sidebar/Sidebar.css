@@ -16,7 +16,6 @@
   transition: width 0.25s ease;
 }
 
-/* Icon-only collapsed state */
 .sidebar.sidebar-collapsed {
   flex-basis: 80px;
   width: 80px;
@@ -96,7 +95,6 @@
   color: #ffffff;
 }
 
-/* Center icons when collapsed */
 .sidebar-collapsed .sidebar-link {
   justify-content: center;
   padding: 0;

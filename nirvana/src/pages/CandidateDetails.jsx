@@ -2,11 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import StatusBadge from "../components/StatusBadge";
+import { permissions } from "../services/permissions";
 
-import {
-  getCandidateById,
-  deleteCandidate,
-} from "../services/liferayApi";
+import { getCandidateById, deleteCandidate } from "../services/liferayApi";
 
 const CandidateDetails = () => {
   const { id } = useParams();
@@ -15,10 +13,6 @@ const CandidateDetails = () => {
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  // -------------------------
-  // GET CANDIDATE BY ID
-  // -------------------------
 
   useEffect(() => {
     const fetchCandidate = async () => {
@@ -32,19 +26,12 @@ const CandidateDetails = () => {
 
         setCandidate(data);
       } catch (error) {
-        console.error(
-          "Candidate Details Error:",
-          error
-        );
+        console.error("Candidate Details Error:", error);
 
-        console.error(
-          "Liferay Error Response:",
-          error.response?.data
-        );
+        console.error("Liferay Error Response:", error.response?.data);
 
         setError(
-          error.response?.data?.title ||
-            "Failed to load candidate."
+          error.response?.data?.title || "Failed to load candidate."
         );
       } finally {
         setLoading(false);
@@ -53,10 +40,6 @@ const CandidateDetails = () => {
 
     fetchCandidate();
   }, [id]);
-
-  // -------------------------
-  // DELETE CANDIDATE
-  // -------------------------
 
   const handleDelete = async () => {
     const confirmed = window.confirm(
@@ -72,21 +55,13 @@ const CandidateDetails = () => {
 
       navigate("/candidates");
     } catch (error) {
-      console.error(
-        "Delete Candidate Error:",
-        error
-      );
+      console.error("Delete Candidate Error:", error);
 
       alert(
-        error.response?.data?.title ||
-          "Failed to delete candidate."
+        error.response?.data?.title || "Failed to delete candidate."
       );
     }
   };
-
-  // -------------------------
-  // VIEW CV
-  // -------------------------
 
   const handleViewCV = () => {
     const cvUrl = candidate?.cV?.link?.href;
@@ -103,10 +78,6 @@ const CandidateDetails = () => {
     window.open(fullUrl, "_blank");
   };
 
-  // -------------------------
-  // DOWNLOAD CV
-  // -------------------------
-
   const handleDownloadCV = () => {
     const cvUrl = candidate?.cV?.link?.href;
 
@@ -122,9 +93,7 @@ const CandidateDetails = () => {
     const link = document.createElement("a");
 
     link.href = fullUrl;
-    link.download =
-      candidate?.cV?.name ||
-      "candidate-resume";
+    link.download = candidate?.cV?.name || "candidate-resume";
 
     document.body.appendChild(link);
 
@@ -132,10 +101,6 @@ const CandidateDetails = () => {
 
     document.body.removeChild(link);
   };
-
-  // -------------------------
-  // LOADING
-  // -------------------------
 
   if (loading) {
     return (
@@ -145,235 +110,180 @@ const CandidateDetails = () => {
     );
   }
 
-  // -------------------------
-  // ERROR
-  // -------------------------
-
   if (error || !candidate) {
     return (
       <div className="page">
-
         <h1>Candidate Not Found</h1>
 
         <p className="error-message">
           {error || "Candidate does not exist."}
         </p>
 
-        <Link to="/candidates">
-          ← Back to Candidates
-        </Link>
-
+        <Link to="/candidates">← Back to Candidates</Link>
       </div>
     );
   }
 
-  // -------------------------
-  // ACTUAL API VALUES
-  // -------------------------
-
   const status =
-    candidate.candidateStatus?.name ||
-    candidate.candidateStatus?.key ||
-    "";
+    candidate.candidateStatus?.name || candidate.candidateStatus?.key || "";
 
-  const role =
-    candidate.picklist?.name ||
-    candidate.picklist?.key ||
-    "-";
+  const role = candidate.picklist?.name || candidate.picklist?.key || "-";
+
+  const address =
+    candidate.address ||
+    candidate.addressRawText ||
+    "Not provided";
+
+  const skillsValue =
+    candidate.skills ||
+    candidate.skillsRawText ||
+    candidate.skill ||
+    candidate.skillSet;
+
+  const skills = Array.isArray(skillsValue)
+    ? skillsValue.join(", ")
+    : skillsValue || "Not provided";
 
   const createdDate = candidate.dateCreated
-    ? new Date(
-        candidate.dateCreated
-      ).toLocaleDateString()
+    ? new Date(candidate.dateCreated).toLocaleDateString()
     : "-";
 
-  const cvName =
-    candidate.cV?.name ||
-    "Candidate Resume";
+  const cvName = candidate.cV?.name || "Candidate Resume";
 
   return (
     <div className="page">
-
-      {/* =========================
-          PAGE HEADER
-      ========================= */}
+      
 
       <div className="details-header">
-
         <div>
-
-          <Link
-            to="/candidates"
-            className="back-link"
-          >
+          <Link to="/candidates" className="back-link">
             ← Back to Candidates
           </Link>
 
           <h1>
-            {candidate.firstName || "-"}{" "}
-            {candidate.lastName || ""}
+            {candidate.firstName || "-"} {candidate.lastName || ""}
           </h1>
 
-          <p>
-            Candidate ID: {candidate.id}
-          </p>
-
+          <p>Candidate ID: {candidate.id}</p>
         </div>
 
         <div className="details-actions">
-
           <StatusBadge status={status} />
 
-          <button
-            className="primary-button"
-            onClick={() => {
-              navigate(
-                `/candidates/${candidate.id}/edit`
-              );
-            }}
-          >
-            Edit Candidate
-          </button>
+          
+          {permissions.canEditCandidate(candidate) && (
+            <button
+              className="primary-button"
+              onClick={() => {
+                navigate(`/candidates/${candidate.id}/edit`);
+              }}
+            >
+              Edit Candidate
+            </button>
+          )}
 
-          <button
-            className="delete-button"
-            onClick={handleDelete}
-          >
-            Delete Candidate
-          </button>
-
+          
+          {permissions.canDeleteCandidate() && (
+            <button className="delete-button" onClick={handleDelete}>
+              Delete Candidate
+            </button>
+          )}
         </div>
-
       </div>
 
-
-      {/* =========================
-          PERSONAL INFORMATION
-      ========================= */}
+      
 
       <section className="details-section">
-
         <h2>Personal Information</h2>
 
         <div className="details-grid">
-
           <div className="detail-item">
             <span>First Name</span>
 
-            <strong>
-              {candidate.firstName || "-"}
-            </strong>
+            <strong>{candidate.firstName || "-"}</strong>
           </div>
-
 
           <div className="detail-item">
             <span>Last Name</span>
 
-            <strong>
-              {candidate.lastName || "-"}
-            </strong>
+            <strong>{candidate.lastName || "-"}</strong>
           </div>
-
 
           <div className="detail-item">
             <span>Email</span>
 
-            <strong>
-              {candidate.emailAddress || "-"}
-            </strong>
+            <strong>{candidate.emailAddress || "-"}</strong>
           </div>
-
 
           <div className="detail-item">
             <span>Phone</span>
 
-            <strong>
-              {candidate.phoneNumber || "-"}
-            </strong>
+            <strong>{candidate.phoneNumber || "-"}</strong>
           </div>
 
-        </div>
+          <div className="detail-item">
+            <span>Address</span>
 
+            <strong>{address}</strong>
+          </div>
+        </div>
       </section>
 
-
-      {/* =========================
-          PROFESSIONAL INFORMATION
-      ========================= */}
+      
 
       <section className="details-section">
-
         <h2>Professional Information</h2>
 
         <div className="details-grid">
-
           <div className="detail-item">
             <span>Experience</span>
 
-            <strong>
-              {candidate.experience || "-"}
-            </strong>
+            <strong>{candidate.experience || "-"}</strong>
           </div>
-
 
           <div className="detail-item">
             <span>Current CTC</span>
 
-            <strong>
-              {candidate.currentCTC ?? "-"}
-            </strong>
+            <strong>{candidate.currentCTC ?? "-"}</strong>
           </div>
-
 
           <div className="detail-item">
             <span>Expected CTC</span>
 
-            <strong>
-              {candidate.expectedCTC ?? "-"}
-            </strong>
+            <strong>{candidate.expectedCTC ?? "-"}</strong>
           </div>
-
 
           <div className="detail-item">
             <span>Notice Period</span>
 
-            <strong>
-              {candidate.noticePeriod || "-"}
-            </strong>
+            <strong>{candidate.noticePeriod || "-"}</strong>
           </div>
-
 
           <div className="detail-item">
             <span>Position Applied</span>
 
-            <strong>
-              {role}
-            </strong>
+            <strong>{role}</strong>
           </div>
 
-        </div>
+          <div className="detail-item">
+            <span>Skills</span>
 
+            <strong>{skills}</strong>
+          </div>
+        </div>
       </section>
 
-
-      {/* =========================
-          RECRUITMENT INFORMATION
-      ========================= */}
+      
 
       <section className="details-section">
-
         <h2>Recruitment Information</h2>
 
         <div className="details-grid">
-
           <div className="detail-item">
             <span>Candidate ID</span>
 
-            <strong>
-              {candidate.id || "-"}
-            </strong>
+            <strong>{candidate.id || "-"}</strong>
           </div>
-
 
           <div className="detail-item">
             <span>Status</span>
@@ -381,102 +291,89 @@ const CandidateDetails = () => {
             <StatusBadge status={status} />
           </div>
 
+          <div className="detail-item">
+            <span>Assigned Manager</span>
+
+            <strong>
+              {candidate.assignedManagerEmail ||
+                candidate.assignedManager?.emailAddress ||
+                candidate.assignedManager?.email ||
+                candidate.assignedManager?.name ||
+                "Unassigned"}
+            </strong>
+          </div>
 
           <div className="detail-item">
             <span>Created Date</span>
 
-            <strong>
-              {createdDate}
-            </strong>
+            <strong>{createdDate}</strong>
           </div>
-
         </div>
-
       </section>
 
-
-      {/* =========================
-          CV / RESUME
-      ========================= */}
+      
 
       <section className="details-section">
-
         <h2>CV / Resume</h2>
 
         <div className="cv-box">
+          <span>📄 {cvName}</span>
 
-          <span>
-            📄 {cvName}
-          </span>
+          
+          {permissions.canViewCV() && (
+            <>
+              <button className="secondary-button" onClick={handleViewCV}>
+                View CV
+              </button>
 
-
-          <button
-            className="secondary-button"
-            onClick={handleViewCV}
-          >
-            View CV
-          </button>
-
-
-          <button
-            className="secondary-button"
-            onClick={handleDownloadCV}
-          >
-            Download CV
-          </button>
-
+              <button
+                className="secondary-button"
+                onClick={handleDownloadCV}
+              >
+                Download CV
+              </button>
+            </>
+          )}
         </div>
-
       </section>
 
-
-      {/* =========================
-          COMMENTS
-      ========================= */}
+      
 
       <section className="details-section">
-
         <h2>Comments</h2>
 
         <div className="comment-box">
-
           <p>
             {candidate.commentsRawText ||
               candidate.comments ||
               "No comments available."}
           </p>
-
         </div>
 
+        
+        {permissions.canAddComments() && (
+          <button
+            className="secondary-button"
+            onClick={() => navigate(`/candidates/${candidate.id}/edit`)}
+          >
+            Add Comment
+          </button>
+        )}
       </section>
 
-
-      {/* =========================
-          STATUS HISTORY
-      ========================= */}
+      
 
       <section className="details-section">
-
         <h2>Status History</h2>
 
         <div className="status-history">
-
           <div className="history-item">
+            <strong>{status || "-"}</strong>
 
-            <strong>
-              {status || "-"}
-            </strong>
-
-            <span>
-              {createdDate}
-            </span>
-
+            <span>{createdDate}</span>
           </div>
-
         </div>
-
       </section>
-
     </div>
   );
 };

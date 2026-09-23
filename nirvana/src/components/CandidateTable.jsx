@@ -1,6 +1,18 @@
 import { Link } from "react-router-dom";
 import StatusBadge from "./StatusBadge";
 
+const getAssignedManager = (candidate) => {
+  const value =
+    candidate.assignedManagerEmail ||
+    candidate.assignedManager?.emailAddress ||
+    candidate.assignedManager?.email ||
+    candidate.assignedManager?.name;
+
+  return value && value !== "null" && value !== "undefined"
+    ? value
+    : "Unassigned";
+};
+
 const CandidateTable = ({ candidates }) => {
   return (
     <div className="table-container">
@@ -12,12 +24,10 @@ const CandidateTable = ({ candidates }) => {
             <th>Last Name</th>
             <th>Email Address</th>
             <th>Phone Number</th>
-            <th>Address</th>
             <th>Experience</th>
             <th>Current CTC</th>
             <th>Expected CTC</th>
             <th>Notice Period</th>
-            <th>Skills</th>
             <th>Position Applied</th>
             <th>Candidate Status</th>
             <th>Comments</th>
@@ -30,14 +40,13 @@ const CandidateTable = ({ candidates }) => {
         <tbody>
           {candidates.length === 0 ? (
             <tr>
-              <td colSpan="17" className="empty-state">
+              <td colSpan="15" className="empty-state">
                 No candidates found
               </td>
             </tr>
           ) : (
             candidates.map((candidate) => (
               <tr key={candidate.id}>
-
                 <td>{candidate.id || "-"}</td>
 
                 <td>{candidate.firstName || "-"}</td>
@@ -47,8 +56,6 @@ const CandidateTable = ({ candidates }) => {
                 <td>{candidate.emailAddress || "-"}</td>
 
                 <td>{candidate.phoneNumber || "-"}</td>
-
-                <td>-</td>
 
                 <td>
                   {candidate.experience !== undefined &&
@@ -78,11 +85,7 @@ const CandidateTable = ({ candidates }) => {
                     : "-"}
                 </td>
 
-                <td>-</td>
-
-                <td>
-                  {candidate.picklist?.name || "-"}
-                </td>
+                <td>{candidate.picklist?.name || "-"}</td>
 
                 <td>
                   <StatusBadge
@@ -100,13 +103,12 @@ const CandidateTable = ({ candidates }) => {
                     "-"}
                 </td>
 
-                <td>-</td>
+                
+                <td>{getAssignedManager(candidate)}</td>
 
                 <td>
                   {candidate.dateCreated
-                    ? new Date(
-                        candidate.dateCreated
-                      ).toLocaleDateString()
+                    ? new Date(candidate.dateCreated).toLocaleDateString()
                     : "-"}
                 </td>
 
@@ -115,7 +117,6 @@ const CandidateTable = ({ candidates }) => {
                     View Profile
                   </Link>
                 </td>
-
               </tr>
             ))
           )}

@@ -17,26 +17,84 @@ const liferayApi = axios.create({
   withCredentials: true,
 });
 
-// GET ALL
+const ASSIGNMENTS_STORAGE_KEY = "candidateManagerAssignments";
+
+const getStoredAssignments = () => {
+  try {
+    return JSON.parse(
+      localStorage.getItem(ASSIGNMENTS_STORAGE_KEY) || "{}"
+    );
+  } catch {
+    return {};
+  }
+};
+
+const storeAssignment = (candidateId, email) => {
+  if (!candidateId) return;
+
+  const assignments = getStoredAssignments();
+
+  if (email) {
+    assignments[candidateId] = email;
+  } else {
+    delete assignments[candidateId];
+  }
+
+  localStorage.setItem(
+    ASSIGNMENTS_STORAGE_KEY,
+    JSON.stringify(assignments)
+  );
+};
+
+const withStoredAssignment = (candidate) => {
+  if (candidate.assignedManagerEmail) return candidate;
+
+  const email = getStoredAssignments()[candidate.id];
+
+  return email
+    ? { ...candidate, assignedManagerEmail: email }
+    : candidate;
+};
+
+const getApiCandidateData = (candidateData) => {
+  const apiCandidateData = { ...candidateData };
+
+  delete apiCandidateData.assignedManagerEmail;
+
+  if (apiCandidateData.picklist && typeof apiCandidateData.picklist === "object") {
+    apiCandidateData.picklist = apiCandidateData.picklist.key;
+  }
+
+  if (
+    apiCandidateData.candidateStatus &&
+    typeof apiCandidateData.candidateStatus === "object"
+  ) {
+    apiCandidateData.candidateStatus = apiCandidateData.candidateStatus.key;
+  }
+
+  return apiCandidateData;
+};
+
 export const getCandidates = async () => {
   const response = await liferayApi.get("/candidates/");
-  return response.data;
-};
 
-// GET BY ID
+  return {
+    ...response.data,
+    items: (response.data.items || []).map(withStoredAssignment),
+  };
+};
 export const getCandidateById = async (id) => {
   const response = await liferayApi.get(`/candidates/${id}`);
-  return response.data;
-};
 
-// CREATE
+  return withStoredAssignment(response.data);
+};
 export const createCandidate = async (candidateData) => {
   console.log("CREATE REQUEST BODY:", candidateData);
 
   const response = await liferayApi({
     method: "POST",
     url: "/candidates/",
-    data: candidateData,
+    data: getApiCandidateData(candidateData),
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
@@ -44,15 +102,18 @@ export const createCandidate = async (candidateData) => {
     },
   });
 
-  return response.data;
-};
+  storeAssignment(
+    response.data.id,
+    candidateData.assignedManagerEmail
+  );
 
-// UPDATE
+  return withStoredAssignment(response.data);
+};
 export const updateCandidate = async (id, candidateData) => {
   const response = await liferayApi({
     method: "PUT",
     url: `/candidates/${id}`,
-    data: candidateData,
+    data: getApiCandidateData(candidateData),
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
@@ -60,10 +121,13 @@ export const updateCandidate = async (id, candidateData) => {
     },
   });
 
-  return response.data;
-};
+  storeAssignment(
+    response.data.id || id,
+    candidateData.assignedManagerEmail
+  );
 
-// DELETE
+  return withStoredAssignment(response.data);
+};
 export const deleteCandidate = async (id) => {
   const response = await liferayApi.delete(
     `/candidates/${id}`

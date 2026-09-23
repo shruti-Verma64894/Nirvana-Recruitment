@@ -8,6 +8,8 @@ import {
 import "./Sidebar.css";
 import logo from "../../assets/logo.png";
 
+import { permissions } from "../../services/permissions";
+
 const Sidebar = ({ isOpen }) => {
   return (
     <aside className={`sidebar ${isOpen ? "" : "sidebar-collapsed"}`}>
@@ -25,15 +27,15 @@ const Sidebar = ({ isOpen }) => {
       </div>
 
       <nav className="sidebar-nav">
-      <NavLink
-  to="/dashboard"
-  className={({ isActive }) =>
-    isActive ? "sidebar-link active" : "sidebar-link"
-  }
->
-  <LayoutDashboard size={20} strokeWidth={1.8} />
-  {isOpen && <span>Dashboard</span>}
-</NavLink>
+        <NavLink
+          to="/dashboard"
+          className={({ isActive }) =>
+            isActive ? "sidebar-link active" : "sidebar-link"
+          }
+        >
+          <LayoutDashboard size={20} strokeWidth={1.8} />
+          {isOpen && <span>Dashboard</span>}
+        </NavLink>
 
         <NavLink
           to="/candidates"
@@ -45,25 +47,31 @@ const Sidebar = ({ isOpen }) => {
           {isOpen && <span>Candidates</span>}
         </NavLink>
 
-        <NavLink
-          to="/candidates/create"
-          className={({ isActive }) =>
-            isActive ? "sidebar-link active" : "sidebar-link"
-          }
-        >
-          <UserPlus size={20} strokeWidth={1.8} />
-          {isOpen && <span>Create Candidate</span>}
-        </NavLink>
+        
+        {permissions.canCreateCandidate() && (
+          <NavLink
+            to="/candidates/create"
+            className={({ isActive }) =>
+              isActive ? "sidebar-link active" : "sidebar-link"
+            }
+          >
+            <UserPlus size={20} strokeWidth={1.8} />
+            {isOpen && <span>Create Candidate</span>}
+          </NavLink>
+        )}
 
-        <NavLink
-          to="/users"
-          className={({ isActive }) =>
-            isActive ? "sidebar-link active" : "sidebar-link"
-          }
-        >
-          <UserRound size={20} strokeWidth={1.8} />
-          {isOpen && <span>Users</span>}
-        </NavLink>
+        
+        {permissions.canManageUsers() && (
+          <NavLink
+            to="/users"
+            className={({ isActive }) =>
+              isActive ? "sidebar-link active" : "sidebar-link"
+            }
+          >
+            <UserRound size={20} strokeWidth={1.8} />
+            {isOpen && <span>Users</span>}
+          </NavLink>
+        )}
       </nav>
     </aside>
   );

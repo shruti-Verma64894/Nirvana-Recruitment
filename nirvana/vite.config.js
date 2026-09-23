@@ -12,7 +12,6 @@ export default defineConfig({
 
         configure: (proxy) => {
           proxy.on("proxyReq", (proxyReq) => {
-            // Do not forward localhost browser Origin to Liferay
             proxyReq.removeHeader("origin");
           });
         },

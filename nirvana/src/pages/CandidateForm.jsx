@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { permissions } from "../services/permissions";
+import { getUsers } from "../services/userService";
+import { resolveRole } from "../services/authService";
+
 import {
   createCandidate,
+  getCandidates,
   getCandidateById,
   updateCandidate,
 } from "../services/liferayApi";
@@ -26,20 +31,68 @@ const CandidateForm = () => {
     candidateStatus: "Active",
     comments: "",
     cv: null,
-
-    // Existing CV ID from Liferay
     existingCVId: null,
+    assignedManagerEmail: "",
   });
 
   const [loading, setLoading] = useState(false);
-  const [loadingCandidate, setLoadingCandidate] =
-    useState(false);
-
+  const [loadingCandidate, setLoadingCandidate] = useState(false);
   const [error, setError] = useState("");
 
-  // =========================
-  // LOAD CANDIDATE FOR EDIT
-  // =========================
+  const [managers, setManagers] = useState([]);
+  const [positions, setPositions] = useState([]);
+  const [loadedCandidate, setLoadedCandidate] = useState(null);
+
+  useEffect(() => {
+    const fetchPositions = async () => {
+      try {
+        const data = await getCandidates();
+        const positionMap = new Map();
+
+        (data.items || []).forEach((candidate) => {
+          const picklist = candidate.picklist;
+          const key = picklist?.key || picklist?.name;
+          const name = picklist?.name || picklist?.key;
+
+          if (key && name) {
+            positionMap.set(key, name);
+          }
+        });
+
+        setPositions(
+          Array.from(positionMap, ([key, name]) => ({ key, name }))
+        );
+      } catch {
+        setPositions([]);
+      }
+    };
+
+    fetchPositions();
+  }, []);
+
+  useEffect(() => {
+    if (!permissions.canAssignManager()) return;
+
+    const fetchManagers = async () => {
+      try {
+        const data = await getUsers();
+
+        const managerList = data
+          .map((u) => ({
+            email: u.emailAddress,
+            name: u.name,
+            role: resolveRole(u.roleBriefs),
+          }))
+          .filter((u) => u.role === "Manager");
+
+        setManagers(managerList);
+      } catch (err) {
+        console.error("Fetch Managers Error:", err);
+      }
+    };
+
+    fetchManagers();
+  }, []);
 
   useEffect(() => {
     if (!isEditMode) {
@@ -53,23 +106,23 @@ const CandidateForm = () => {
 
         const candidate = await getCandidateById(id);
 
-        console.log(
-          "Candidate for Edit:",
-          candidate
-        );
+        console.log("Candidate for Edit:", candidate);
+        if (!permissions.canEditCandidate(candidate)) {
+          alert("You don't have permission to edit this candidate.");
+          navigate(`/candidates/${id}`);
+          return;
+        }
+
+        setLoadedCandidate(candidate);
 
         setFormData({
-          firstName:
-            candidate.firstName || "",
+          firstName: candidate.firstName || "",
 
-          lastName:
-            candidate.lastName || "",
+          lastName: candidate.lastName || "",
 
-          emailAddress:
-            candidate.emailAddress || "",
+          emailAddress: candidate.emailAddress || "",
 
-          phoneNumber:
-            candidate.phoneNumber || "",
+          phoneNumber: candidate.phoneNumber || "",
 
           experience:
             candidate.experience !== undefined &&
@@ -111,16 +164,16 @@ const CandidateForm = () => {
             "",
 
           cv: null,
+          existingCVId: candidate.cV?.id || null,
 
-          // IMPORTANT
-          existingCVId:
-            candidate.cV?.id || null,
+          assignedManagerEmail:
+            candidate.assignedManagerEmail ||
+            candidate.assignedManager?.emailAddress ||
+            candidate.assignedManager?.email ||
+            "",
         });
       } catch (error) {
-        console.error(
-          "Load Candidate Error:",
-          error
-        );
+        console.error("Load Candidate Error:", error);
 
         console.error(
           "Liferay Error Response:",
@@ -139,10 +192,6 @@ const CandidateForm = () => {
     fetchCandidate();
   }, [id, isEditMode]);
 
-  // =========================
-  // HANDLE INPUT CHANGE
-  // =========================
-
   const handleChange = (e) => {
     const { name, value, files } = e.target;
 
@@ -152,10 +201,6 @@ const CandidateForm = () => {
     }));
   };
 
-  // =========================
-  // FILE TO BASE64
-  // =========================
-
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -163,8 +208,7 @@ const CandidateForm = () => {
       reader.readAsDataURL(file);
 
       reader.onload = () => {
-        const base64 =
-          reader.result.split(",")[1];
+        const base64 = reader.result.split(",")[1];
 
         resolve(base64);
       };
@@ -175,10 +219,6 @@ const CandidateForm = () => {
     });
   };
 
-  // =========================
-  // STATUS NAME
-  // =========================
-
   const getStatusName = (key) => {
     const statusMap = {
       Active: "Active",
@@ -187,6 +227,8 @@ const CandidateForm = () => {
       Round2: "Round 2",
       Round3: "Round 3",
       Round4: "Round 4",
+      Selected: "Selected",
+      OnHold: "On Hold",
       Rejected: "Rejected",
       Approved: "Approved",
       OfferLetter: "Offer Letter",
@@ -195,177 +237,109 @@ const CandidateForm = () => {
     return statusMap[key] || key;
   };
 
-  // =========================
-  // SUBMIT
-  // =========================
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
+    setLoading(true);
+    setError("");
 
-  setLoading(true);
-  setError("");
+    try {
 
-  try {
-    // =========================
-    // CREATE BASIC CANDIDATE DATA
-    // =========================
+      const candidateData = {
+        firstName: formData.firstName.trim(),
 
-    const candidateData = {
-      firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
 
-      lastName: formData.lastName.trim(),
+        emailAddress: formData.emailAddress.trim(),
 
-      emailAddress: formData.emailAddress.trim(),
+        phoneNumber: formData.phoneNumber.trim(),
 
-      phoneNumber: formData.phoneNumber.trim(),
+        experience: formData.experience.trim(),
 
-      experience: formData.experience.trim(),
+        currentCTC: formData.currentCTC
+          ? Number(formData.currentCTC)
+          : 0,
 
-      currentCTC: formData.currentCTC
-        ? Number(formData.currentCTC)
-        : 0,
+        expectedCTC: formData.expectedCTC
+          ? Number(formData.expectedCTC)
+          : 0,
 
-      expectedCTC: formData.expectedCTC
-        ? Number(formData.expectedCTC)
-        : 0,
+        noticePeriod: formData.noticePeriod.trim(),
+        picklist: {
+          key: formData.positionApplied,
+          name: formData.positionApplied,
+        },
+        candidateStatus: {
+          key: formData.candidateStatus,
+          name: getStatusName(formData.candidateStatus),
+        },
 
-      noticePeriod: formData.noticePeriod.trim(),
-
-      // Liferay Picklist
-      picklist: {
-        key: formData.positionApplied,
-        name: formData.positionApplied,
-      },
-
-      // Liferay Candidate Status Picklist
-      candidateStatus: {
-        key: formData.candidateStatus,
-        name: getStatusName(formData.candidateStatus),
-      },
-
-      comments: formData.comments.trim(),
-    };
-
-    // =========================
-    // CV
-    // =========================
-
-    if (formData.cv) {
-      const base64 = await fileToBase64(formData.cv);
-
-      candidateData.cV = {
-        name: formData.cv.name,
-        fileBase64: base64,
+        comments: formData.comments.trim(),
+        assignedManagerEmail: formData.assignedManagerEmail,
       };
-    } else if (formData.existingCVId) {
-      // Required for Edit Candidate
-      candidateData.cV = formData.existingCVId;
-    } else {
-      throw new Error(
-        "CV is required. Please upload a CV."
-      );
-    }
 
-    // =========================
-    // DEBUG
-    // =========================
+      if (formData.cv) {
+        const base64 = await fileToBase64(formData.cv);
 
-    console.log(
-      "========== LIFERAY REQUEST =========="
-    );
+        candidateData.cV = {
+          name: formData.cv.name,
+          fileBase64: base64,
+        };
+      } else if (formData.existingCVId) {
+        candidateData.cV = formData.existingCVId;
+      } else {
+        throw new Error(
+          "CV is required. Please upload a CV."
+        );
+      }
 
-    console.log(
-      "Mode:",
-      isEditMode ? "UPDATE" : "CREATE"
-    );
+      console.log("========== LIFERAY REQUEST ==========");
 
-    console.log(
-      "Candidate Data:",
-      JSON.stringify(candidateData, null, 2)
-    );
-
-    // =========================
-    // UPDATE
-    // =========================
-
-    if (isEditMode) {
-      const response = await updateCandidate(
-        id,
-        candidateData
-      );
+      console.log("Mode:", isEditMode ? "UPDATE" : "CREATE");
 
       console.log(
-        "Candidate Updated:",
-        response
+        "Candidate Data:",
+        JSON.stringify(candidateData, null, 2)
       );
 
-      alert(
-        "Candidate updated successfully!"
+      if (isEditMode) {
+        const response = await updateCandidate(id, candidateData);
+
+        console.log("Candidate Updated:", response);
+
+        alert("Candidate updated successfully!");
+      }
+      else {
+        const response = await createCandidate(candidateData);
+
+        console.log("Candidate Created:", response);
+
+        alert("Candidate created successfully!");
+      }
+
+      navigate("/candidates");
+    } catch (error) {
+      console.error(
+        isEditMode ? "Update Candidate Error:" : "Create Candidate Error:",
+        error
       );
+
+      console.error("Liferay Error Response:", error.response?.data);
+
+      console.error("Liferay Status:", error.response?.status);
+
+      console.error("Liferay Request:", error.config);
+
+      setError(
+        error.response?.data?.title ||
+          error.response?.data?.message ||
+          error.message ||
+          `Failed to ${isEditMode ? "update" : "create"} candidate.`
+      );
+    } finally {
+      setLoading(false);
     }
-
-    // =========================
-    // CREATE
-    // =========================
-
-    else {
-      const response = await createCandidate(
-        candidateData
-      );
-
-      console.log(
-        "Candidate Created:",
-        response
-      );
-
-      alert(
-        "Candidate created successfully!"
-      );
-    }
-
-    navigate("/candidates");
-
-  } catch (error) {
-    console.error(
-      isEditMode
-        ? "Update Candidate Error:"
-        : "Create Candidate Error:",
-      error
-    );
-
-    console.error(
-      "Liferay Error Response:",
-      error.response?.data
-    );
-
-    console.error(
-      "Liferay Status:",
-      error.response?.status
-    );
-
-    console.error(
-      "Liferay Request:",
-      error.config
-    );
-
-    setError(
-      error.response?.data?.title ||
-      error.response?.data?.message ||
-      error.message ||
-      `Failed to ${
-        isEditMode
-          ? "update"
-          : "create"
-      } candidate.`
-    );
-
-  } finally {
-    setLoading(false);
-  }
-};
-  // =========================
-  // LOADING
-  // =========================
+  };
 
   if (loadingCandidate) {
     return (
@@ -375,67 +349,40 @@ const CandidateForm = () => {
     );
   }
 
-  // =========================
-  // UI
-  // =========================
+  const canEditRestricted = permissions.canEditRestrictedFields();
+  const canUploadCV = permissions.canUploadCV(
+    loadedCandidate || { assignedManagerEmail: formData.assignedManagerEmail }
+  );
 
   return (
     <div className="page">
-
-      {/* HEADER */}
+      
 
       <div className="page-header">
-
         <div>
-
-          <h1>
-            {isEditMode
-              ? "Edit Candidate"
-              : "Create Candidate"}
-          </h1>
+          <h1>{isEditMode ? "Edit Candidate" : "Create Candidate"}</h1>
 
           <p>
             {isEditMode
               ? "Update candidate information"
               : "Add a new candidate to the recruitment system"}
           </p>
-
         </div>
-
       </div>
 
+      
 
-      {/* ERROR */}
+      {error && <p className="error-message">{error}</p>}
 
-      {error && (
-        <p className="error-message">
-          {error}
-        </p>
-      )}
-
-
-      <form
-        className="candidate-form"
-        onSubmit={handleSubmit}
-      >
-
-        {/* =========================
-            PERSONAL INFORMATION
-        ========================= */}
+      <form className="candidate-form" onSubmit={handleSubmit}>
+        
 
         <section className="form-section">
-
-          <h2>
-            Personal Information
-          </h2>
+          <h2>Personal Information</h2>
 
           <div className="form-grid">
-
             <div className="form-group">
-
-              <label>
-                First Name *
-              </label>
+              <label>First Name *</label>
 
               <input
                 type="text"
@@ -445,15 +392,10 @@ const CandidateForm = () => {
                 placeholder="Enter first name"
                 required
               />
-
             </div>
 
-
             <div className="form-group">
-
-              <label>
-                Last Name *
-              </label>
+              <label>Last Name *</label>
 
               <input
                 type="text"
@@ -463,343 +405,226 @@ const CandidateForm = () => {
                 placeholder="Enter last name"
                 required
               />
-
             </div>
 
-
             <div className="form-group">
-
-              <label>
-                Email Address *
-              </label>
+              <label>Email Address *</label>
 
               <input
                 type="email"
                 name="emailAddress"
-                value={
-                  formData.emailAddress
-                }
+                value={formData.emailAddress}
                 onChange={handleChange}
                 placeholder="Enter email"
                 required
               />
-
             </div>
 
-
             <div className="form-group">
-
-              <label>
-                Phone Number *
-              </label>
+              <label>Phone Number *</label>
 
               <input
                 type="tel"
                 name="phoneNumber"
-                value={
-                  formData.phoneNumber
-                }
+                value={formData.phoneNumber}
                 onChange={handleChange}
                 placeholder="Enter phone number"
                 required
               />
-
             </div>
-
           </div>
-
         </section>
 
-
-        {/* =========================
-            PROFESSIONAL INFORMATION
-        ========================= */}
+        
 
         <section className="form-section">
-
-          <h2>
-            Professional Information
-          </h2>
+          <h2>Professional Information</h2>
 
           <div className="form-grid">
-
             <div className="form-group">
-
-              <label>
-                Experience *
-              </label>
+              <label>Experience *</label>
 
               <input
                 type="text"
                 name="experience"
-                value={
-                  formData.experience
-                }
+                value={formData.experience}
                 onChange={handleChange}
                 placeholder="e.g. 2 years"
                 required
               />
-
             </div>
 
-
             <div className="form-group">
-
               <label>
                 Current CTC
+                {!canEditRestricted && " (HR only)"}
               </label>
 
               <input
                 type="number"
                 name="currentCTC"
-                value={
-                  formData.currentCTC
-                }
+                value={formData.currentCTC}
                 onChange={handleChange}
                 placeholder="e.g. 500000"
                 min="0"
+                disabled={!canEditRestricted}
               />
-
             </div>
 
-
             <div className="form-group">
-
               <label>
                 Expected CTC *
+                {!canEditRestricted && " (HR only)"}
               </label>
 
               <input
                 type="number"
                 name="expectedCTC"
-                value={
-                  formData.expectedCTC
-                }
+                value={formData.expectedCTC}
                 onChange={handleChange}
                 placeholder="e.g. 700000"
                 min="0"
                 required
+                disabled={!canEditRestricted}
               />
-
             </div>
 
-
             <div className="form-group">
-
-              <label>
-                Notice Period *
-              </label>
+              <label>Notice Period *</label>
 
               <input
                 type="text"
                 name="noticePeriod"
-                value={
-                  formData.noticePeriod
-                }
+                value={formData.noticePeriod}
                 onChange={handleChange}
                 placeholder="e.g. 30 days"
                 required
               />
-
             </div>
 
-
             <div className="form-group">
-
               <label>
                 Position Applied *
+                {!canEditRestricted && " (HR only)"}
               </label>
 
               <select
                 name="positionApplied"
-                value={
-                  formData.positionApplied
-                }
+                value={formData.positionApplied}
                 onChange={handleChange}
                 required
+                disabled={!canEditRestricted}
               >
-
-                <option value="">
-                  Select Position
-                </option>
-
-                <option value="Liferay">
-                  Liferay
-                </option>
-
-                <option value="Frontend Developer">
-                  Frontend Developer
-                </option>
-
-                <option value="Backend Developer">
-                  Backend Developer
-                </option>
-
-                <option value="Full Stack Developer">
-                  Full Stack Developer
-                </option>
-
-                <option value="Java Developer">
-                  Java Developer
-                </option>
-
-                <option value="Python Developer">
-                  Python Developer
-                </option>
-
-                <option value="AI/ML Engineer">
-                  AI/ML Engineer
-                </option>
-
+                <option value="">Select Position</option>
+                {positions.map((position) => (
+                  <option key={position.key} value={position.key}>
+                    {position.name}
+                  </option>
+                ))}
               </select>
-
             </div>
-
           </div>
-
         </section>
 
-
-        {/* =========================
-            RECRUITMENT INFORMATION
-        ========================= */}
+        
 
         <section className="form-section">
-
-          <h2>
-            Recruitment Information
-          </h2>
+          <h2>Recruitment Information</h2>
 
           <div className="form-grid">
-
             <div className="form-group">
-
-              <label>
-                Candidate Status *
-              </label>
+              <label>Candidate Status *</label>
 
               <select
                 name="candidateStatus"
-                value={
-                  formData.candidateStatus
-                }
+                value={formData.candidateStatus}
                 onChange={handleChange}
                 required
               >
+                <option value="Active">Active</option>
+                <option value="Review">Review</option>
+                <option value="Round1">Round 1</option>
+                <option value="Round2">Round 2</option>
+                <option value="Round3">Round 3</option>
+                <option value="Round4">Round 4</option>
+                <option value="Selected">Selected</option>
+                <option value="OnHold">On Hold</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Approved">Approved</option>
 
-                <option value="Active">
-                  Active
-                </option>
-
-                <option value="Review">
-                  Review
-                </option>
-
-                <option value="Round1">
-                  Round 1
-                </option>
-
-                <option value="Round2">
-                  Round 2
-                </option>
-
-                <option value="Round3">
-                  Round 3
-                </option>
-
-                <option value="Round4">
-                  Round 4
-                </option>
-
-                <option value="Rejected">
-                  Rejected
-                </option>
-
-                <option value="Approved">
-                  Approved
-                </option>
-
-                <option value="OfferLetter">
-                  Offer Letter
-                </option>
-
+                {permissions.canSetOfferLetter() && (
+                  <option value="OfferLetter">Offer Letter</option>
+                )}
               </select>
-
             </div>
 
+            {permissions.canAssignManager() && (
+              <div className="form-group">
+                <label>Assign Manager</label>
 
-            <div className="form-group">
+                <select
+                  name="assignedManagerEmail"
+                  value={formData.assignedManagerEmail}
+                  onChange={handleChange}
+                >
+                  <option value="">Unassigned</option>
 
-              <label>
-                Upload CV
-              </label>
+                  {managers.map((m) => (
+                    <option key={m.email} value={m.email}>
+                      {m.name} ({m.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-              <input
-                type="file"
-                name="cv"
-                onChange={handleChange}
-                accept=".pdf,.doc,.docx"
-              />
+            {canUploadCV && (
+              <div className="form-group">
+                <label>Upload CV</label>
 
-              {isEditMode &&
-                formData.existingCVId && (
+                <input
+                  type="file"
+                  name="cv"
+                  onChange={handleChange}
+                  accept=".pdf,.doc,.docx"
+                />
+
+                {isEditMode && formData.existingCVId && (
                   <small>
-                    Existing CV is already
-                    attached. Select a new
-                    file only if you want to
-                    replace it.
+                    Existing CV is already attached. Select a new
+                    file only if you want to replace it.
                   </small>
                 )}
-
-            </div>
-
+              </div>
+            )}
 
             <div className="form-group form-full">
-
-              <label>
-                Comments
-              </label>
+              <label>Comments</label>
 
               <textarea
                 name="comments"
-                value={
-                  formData.comments
-                }
+                value={formData.comments}
                 onChange={handleChange}
                 placeholder="Add comments..."
                 rows="4"
               />
-
             </div>
-
           </div>
-
         </section>
 
-
-        {/* =========================
-            BUTTONS
-        ========================= */}
+        
 
         <div className="form-actions">
-
           <button
             type="button"
             className="secondary-button"
-            onClick={() =>
-              navigate("/candidates")
-            }
+            onClick={() => navigate("/candidates")}
             disabled={loading}
           >
             Cancel
           </button>
 
-
-          <button
-            type="submit"
-            className="primary-button"
-            disabled={loading}
-          >
+          <button type="submit" className="primary-button" disabled={loading}>
             {loading
               ? isEditMode
                 ? "Updating..."
@@ -808,11 +633,8 @@ const CandidateForm = () => {
               ? "Update Candidate"
               : "Create Candidate"}
           </button>
-
         </div>
-
       </form>
-
     </div>
   );
 };

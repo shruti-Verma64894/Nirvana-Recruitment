@@ -25,9 +25,6 @@ const Users = () => {
           role: resolveRole(user.roleBriefs),
           status: user.status || "-",
         }));
-
-        // Sirf wahi users jo app me login kar sakte hain
-        // (jinki role HR ya Manager resolve hui — resolveRole null nahi)
         const loginEligible = mapped.filter((user) => user.role !== null);
 
         setUsers(loginEligible);

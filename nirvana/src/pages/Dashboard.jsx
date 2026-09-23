@@ -31,11 +31,13 @@ const Dashboard = () => {
   }, []);
 
   const getStatus = (candidate) => {
-    return (
-      candidate.nirvanaStatus?.key ||
-      candidate.nirvanaStatus?.name ||
-      ""
-    );
+    const status = candidate.candidateStatus;
+    const value = typeof status === "string" ? status : status?.key || status?.name;
+
+    return String(value || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[\s_-]+/g, "");
   };
 
   const stats = [
@@ -52,7 +54,19 @@ const Dashboard = () => {
     {
       title: "Under Review",
       value: candidates.filter(
-        (candidate) => getStatus(candidate) === "REVIEW"
+        (candidate) => ["REVIEW", "UNDERREVIEW"].includes(getStatus(candidate))
+      ).length,
+    },
+    {
+      title: "Selected",
+      value: candidates.filter(
+        (candidate) => getStatus(candidate) === "SELECTED"
+      ).length,
+    },
+    {
+      title: "On Hold",
+      value: candidates.filter(
+        (candidate) => getStatus(candidate) === "ONHOLD"
       ).length,
     },
     {
@@ -94,7 +108,7 @@ const Dashboard = () => {
     {
       title: "Offer Letter",
       value: candidates.filter(
-        (candidate) => getStatus(candidate) === "OFFER_LETTER"
+        (candidate) => getStatus(candidate) === "OFFERLETTER"
       ).length,
     },
   ];

@@ -420,7 +420,6 @@ table {
 .form-full {
   grid-column: 1 / -1;
 }
-/* Login Page */
 
 .login-page {
   min-height: 100vh;

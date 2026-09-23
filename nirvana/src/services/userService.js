@@ -8,11 +8,6 @@ const servicePassword = import.meta.env.VITE_LIFERAY_PASSWORD;
 const serviceBasicAuth = btoa(`${serviceUsername}:${servicePassword}`);
 
 export const getUsers = async () => {
-  // NOTE: Yahan logged-in user ka basicAuth nahi, service-account
-  // (Administrator) credentials use ho rahe hain — kyunki Liferay
-  // me sirf "HR" custom role rakhne waale users ke paas doosre
-  // users ki list dekhne ki permission nahi hoti, sirf apna record
-  // dikhta hai. Users list ek "admin-level" operation hai.
 
   const response = await axios.get(
     `${BASE_URL}/o/headless-admin-user/v1.0/user-accounts`,

@@ -13,7 +13,7 @@ const CandidateFilters = ({
   return (
     <div className="filters">
 
-      {/* STATUS */}
+      
 
       <select
         value={status}
@@ -47,6 +47,14 @@ const CandidateFilters = ({
           Round 4
         </option>
 
+        <option value="Selected">
+          Selected
+        </option>
+
+        <option value="OnHold">
+          On Hold
+        </option>
+
         <option value="Rejected">
           Rejected
         </option>
@@ -60,8 +68,7 @@ const CandidateFilters = ({
         </option>
       </select>
 
-
-      {/* POSITION APPLIED */}
+      
 
       <select
         value={role}
@@ -100,8 +107,7 @@ const CandidateFilters = ({
         </option>
       </select>
 
-
-      {/* SKILLS */}
+      
 
       <select
         value={skill}
@@ -136,8 +142,7 @@ const CandidateFilters = ({
         </option>
       </select>
 
-
-      {/* START DATE */}
+      
 
       <input
         type="date"
@@ -147,8 +152,7 @@ const CandidateFilters = ({
         }
       />
 
-
-      {/* END DATE */}
+      
 
       <input
         type="date"
