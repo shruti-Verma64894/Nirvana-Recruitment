@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/o": {
-        target: "http://192.168.1.20:8080",
+        target: "http://192.168.1.19:8080",
         changeOrigin: true,
 
         configure: (proxy) => {
