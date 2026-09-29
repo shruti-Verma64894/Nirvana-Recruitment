@@ -5,9 +5,20 @@ import Layout from "./components/Layout";
 const App = () => {
   const location = useLocation();
 
+<<<<<<< Updated upstream
   const isLoginPage = location.pathname === "/login";
   if (isLoginPage) {
     return <AppRoutes />;
+=======
+  function handleLoginSuccess() {
+    sessionStorage.setItem('nirvana_logged_in', 'true');
+    setIsLoggedIn(true);
+  } 
+
+  function handleLogout() {
+    sessionStorage.removeItem('nirvana_logged_in');
+    setIsLoggedIn(false);
+>>>>>>> Stashed changes
   }
 
   return (
